@@ -1,0 +1,26 @@
+alias: 'Aquarium Forecast Caching'
+description: 'Saves the 3-day weather forecast locally twice a day.'
+trigger:
+  - platform: time
+    at:
+      - "04:00:00"
+      - "16:00:00"
+condition:
+action:
+  - service: weather.get_forecasts
+    target:
+      entity_id: weather.openweathermap # CHANGE TO YOUR WEATHER ENTITY
+    data:
+      type: daily
+    response_variable: daily_forecast
+    continue_on_error: true
+  - if:
+      - condition: template
+        value_template: "{{ daily_forecast is defined and daily_forecast }}"
+    then:
+      - service: input_text.set_value
+        target:
+          entity_id: input_text.aquarium_forecast_cache
+        data:
+          value: "{{ daily_forecast | to_json }}"
+mode: single

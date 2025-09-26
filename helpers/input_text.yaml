@@ -1,0 +1,7 @@
+# Text helper to cache the weather forecast
+# Create this in Settings > Devices & Services > Helpers
+
+input_text:
+  aquarium_forecast_cache:
+    name: "Aquarium Forecast Cache"
+    max: 8192

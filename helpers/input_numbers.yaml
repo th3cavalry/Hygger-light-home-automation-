@@ -1,0 +1,35 @@
+# Number helpers to track the state of each color channel
+# Create these in Settings > Devices & Services > Helpers
+
+input_number:
+  hygger_white_level:
+    name: "Hygger White Level"
+    min: 0
+    max: 10
+    step: 1
+    mode: slider
+    icon: mdi:lightbulb-outline
+    
+  hygger_red_level:
+    name: "Hygger Red Level"
+    min: 0
+    max: 10
+    step: 1
+    mode: slider
+    icon: mdi:lightbulb-outline
+    
+  hygger_green_level:
+    name: "Hygger Green Level"
+    min: 0
+    max: 10
+    step: 1
+    mode: slider
+    icon: mdi:lightbulb-outline
+    
+  hygger_blue_level:
+    name: "Hygger Blue Level"
+    min: 0
+    max: 10
+    step: 1
+    mode: slider
+    icon: mdi:lightbulb-outline

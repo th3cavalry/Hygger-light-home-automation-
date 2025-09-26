@@ -1,0 +1,7 @@
+# Toggle helper to enable/disable the lightning effect
+# Create this in Settings > Devices & Services > Helpers
+
+input_boolean:
+  enable_aquarium_lightning:
+    name: "Enable Aquarium Lightning"
+    icon: mdi:weather-lightning

@@ -1,0 +1,15 @@
+alias: Sync Aquarium Lights
+description: Resets the light to zero then applies the current correct state.
+sequence:
+  - service: script.turn_on
+    target:
+      entity_id: script.aquarium_reset_to_zero
+  - delay:
+      seconds: 20
+  - service: automation.trigger
+    target:
+      entity_id: automation.aquarium_dynamic_circadian_lighting # Ensure your main automation entity_id matches this
+    data:
+      skip_conditions: true
+mode: single
+icon: mdi:sync

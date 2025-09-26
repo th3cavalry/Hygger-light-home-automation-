@@ -1,0 +1,28 @@
+alias: Aquarium Reset to Zero
+description: Sends repeated 'down' commands to ensure all channels are at 0.
+sequence:
+  - repeat:
+      count: 12
+      sequence:
+        - service: remote.send_command
+          target:
+            entity_id: remote.rm4_pro_remote # CHANGE TO YOUR BROADLINK ENTITY
+          data:
+            device: hygger_hg016
+            command:
+              - white_down
+              - red_down
+              - green_down
+              - blue_down
+        - delay:
+            milliseconds: 250
+  - service: input_number.set_value
+    target:
+      entity_id:
+        - input_number.hygger_white_level
+        - input_number.hygger_red_level
+        - input_number.hygger_green_level
+        - input_number.hygger_blue_level
+    data:
+      value: 0
+mode: single

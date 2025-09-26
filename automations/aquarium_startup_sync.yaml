@@ -1,0 +1,13 @@
+alias: 'Aquarium Startup Sync'
+description: 'Runs the sync script on Home Assistant startup to recover from reboots.'
+trigger:
+  - platform: homeassistant
+    event: start
+condition:
+action:
+  - delay:
+      minutes: 1
+  - service: script.turn_on
+    target:
+      entity_id: script.sync_aquarium_lights
+mode: single
