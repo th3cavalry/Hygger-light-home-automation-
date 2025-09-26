@@ -1,0 +1,52 @@
+# Dashboard configuration for the Aquarium Control interface
+# Create a new dashboard called "Aquarium Control" and use this YAML
+
+title: Aquarium Control
+path: aquarium-control
+icon: mdi:fishbowl-outline
+badges: []
+cards:
+  - type: weather-forecast
+    entity: weather.openweathermap  # CHANGE TO YOUR WEATHER ENTITY
+    name: Weather Data Source
+    
+  - type: entities
+    title: Aquarium Lighting Control
+    entities:
+      - entity: input_boolean.enable_aquarium_lightning
+        name: "Enable Lightning Effects"
+      - entity: script.sync_aquarium_lights
+        name: "Sync Lights"
+        tap_action:
+          action: call-service
+          service: script.turn_on
+          service_data:
+            entity_id: script.sync_aquarium_lights
+            
+  - type: entities
+    title: Current Light Levels
+    show_header_toggle: false
+    entities:
+      - entity: input_number.hygger_white_level
+        name: "White Channel"
+      - entity: input_number.hygger_red_level
+        name: "Red Channel"
+      - entity: input_number.hygger_green_level
+        name: "Green Channel"
+      - entity: input_number.hygger_blue_level
+        name: "Blue Channel"
+        
+  - type: entities
+    title: System Status
+    show_header_toggle: false
+    entities:
+      - entity: sun.sun
+        name: "Sun Position"
+      - entity: automation.aquarium_dynamic_circadian_lighting
+        name: "Main Automation"
+      - entity: automation.aquarium_daily_reset
+        name: "Daily Reset"
+      - entity: automation.aquarium_startup_sync
+        name: "Startup Sync"
+      - entity: automation.aquarium_forecast_caching
+        name: "Forecast Caching"

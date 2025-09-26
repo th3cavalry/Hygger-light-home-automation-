@@ -1,0 +1,132 @@
+# This script compares the desired light state to the current state stored in the helpers
+# and sends the exact number of IR commands to match the target.
+alias: Aquarium Reconcile State
+description: Gradually adjusts each color channel to match a target value.
+fields:
+  target_w:
+    description: "Target brightness for White channel (0-10)"
+    example: 8
+  target_r:
+    description: "Target brightness for Red channel (0-10)"
+    example: 5
+  target_g:
+    description: "Target brightness for Green channel (0-10)"
+    example: 5
+  target_b:
+    description: "Target brightness for Blue channel (0-10)"
+    example: 2
+sequence:
+  - variables:
+      current: "{{ states('input_number.hygger_white_level') | int }}"
+      target: "{{ target_w | int }}"
+  - choose:
+      - conditions: "{{ target > current }}"
+        sequence:
+          - repeat:
+              count: "{{ target - current }}"
+              sequence:
+                - service: remote.send_command
+                  target:
+                    entity_id: remote.rm4_pro_remote # CHANGE TO YOUR BROADLINK ENTITY
+                  data:
+                    device: hygger_hg016
+                    command: white_up
+                - delay:
+                    milliseconds: 250
+      - conditions: "{{ target < current }}"
+        sequence:
+          - repeat:
+              count: "{{ current - target }}"
+              sequence:
+                - service: remote.send_command
+                  target:
+                    entity_id: remote.rm4_pro_remote # CHANGE TO YOUR BROADLINK ENTITY
+                  data:
+                    device: hygger_hg016
+                    command: white_down
+                - delay:
+                    milliseconds: 250
+  - service: input_number.set_value
+    target:
+      entity_id: input_number.hygger_white_level
+    data:
+      value: "{{ target_w }}"
+  - variables:
+      current: "{{ states('input_number.hygger_red_level') | int }}"
+      target: "{{ target_r | int }}"
+  - choose:
+      - conditions: "{{ target > current }}"
+        sequence:
+          - repeat:
+              count: "{{ target - current }}"
+              sequence:
+                - service: remote.send_command
+                  target: { entity_id: remote.rm4_pro_remote } # CHANGE TO YOUR BROADLINK ENTITY
+                  data: { device: hygger_hg016, command: red_up }
+                - delay: { milliseconds: 250 }
+      - conditions: "{{ target < current }}"
+        sequence:
+          - repeat:
+              count: "{{ current - target }}"
+              sequence:
+                - service: remote.send_command
+                  target: { entity_id: remote.rm4_pro_remote } # CHANGE TO YOUR BROADLINK ENTITY
+                  data: { device: hygger_hg016, command: red_down }
+                - delay: { milliseconds: 250 }
+  - service: input_number.set_value
+    target: { entity_id: input_number.hygger_red_level }
+    data:
+      value: "{{ target_r }}"
+  - variables:
+      current: "{{ states('input_number.hygger_green_level') | int }}"
+      target: "{{ target_g | int }}"
+  - choose:
+      - conditions: "{{ target > current }}"
+        sequence:
+          - repeat:
+              count: "{{ target - current }}"
+              sequence:
+                - service: remote.send_command
+                  target: { entity_id: remote.rm4_pro_remote } # CHANGE TO YOUR BROADLINK ENTITY
+                  data: { device: hygger_hg016, command: green_up }
+                - delay: { milliseconds: 250 }
+      - conditions: "{{ target < current }}"
+        sequence:
+          - repeat:
+              count: "{{ current - target }}"
+              sequence:
+                - service: remote.send_command
+                  target: { entity_id: remote.rm4_pro_remote } # CHANGE TO YOUR BROADLINK ENTITY
+                  data: { device: hygger_hg016, command: green_down }
+                - delay: { milliseconds: 250 }
+  - service: input_number.set_value
+    target: { entity_id: input_number.hygger_green_level }
+    data:
+      value: "{{ target_g }}"
+  - variables:
+      current: "{{ states('input_number.hygger_blue_level') | int }}"
+      target: "{{ target_b | int }}"
+  - choose:
+      - conditions: "{{ target > current }}"
+        sequence:
+          - repeat:
+              count: "{{ target - current }}"
+              sequence:
+                - service: remote.send_command
+                  target: { entity_id: remote.rm4_pro_remote } # CHANGE TO YOUR BROADLINK ENTITY
+                  data: { device: hygger_hg016, command: blue_up }
+                - delay: { milliseconds: 250 }
+      - conditions: "{{ target < current }}"
+        sequence:
+          - repeat:
+              count: "{{ current - target }}"
+              sequence:
+                - service: remote.send_command
+                  target: { entity_id: remote.rm4_pro_remote } # CHANGE TO YOUR BROADLINK ENTITY
+                  data: { device: hygger_hg016, command: blue_down }
+                - delay: { milliseconds: 250 }
+  - service: input_number.set_value
+    target: { entity_id: input_number.hygger_blue_level }
+    data:
+      value: "{{ target_b }}"
+mode: single

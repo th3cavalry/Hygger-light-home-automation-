@@ -1,0 +1,91 @@
+# This is the main "brain" automation. It runs every minute.
+alias: Aquarium Dynamic Circadian Lighting
+description: Runs every minute to adjust light based on sun and weather forecast.
+trigger:
+  - platform: time_pattern
+    minutes: "/1"
+condition:
+action:
+  - service: weather.get_forecasts
+    target:
+      entity_id: weather.openweathermap # CHANGE TO YOUR WEATHER ENTITY
+    data:
+      type: hourly
+    response_variable: hourly_forecast
+    continue_on_error: true
+  - variables:
+      forecast: >
+        {% if hourly_forecast is defined and hourly_forecast %}
+          {{ hourly_forecast['weather.openweathermap'].forecast.condition }}
+        {% elif states('input_text.aquarium_forecast_cache') | from_json %}
+          {% set cached_data = states('input_text.aquarium_forecast_cache') | from_json %}
+          {{ cached_data['weather.openweathermap'].forecast.condition }}
+        {% else %}
+          sunny
+        {% endif %}
+      elevation: "{{ state_attr('sun.sun', 'elevation') }}"
+      base_brightness: "{{ [0, (elevation / 9) | round(0) | int] | max }}"
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ forecast in ['lightning', 'lightning-rainy'] }}"
+          - condition: state
+            entity_id: input_boolean.enable_aquarium_lightning
+            state: 'on'
+        sequence:
+          - service: script.turn_on
+            target:
+              entity_id: script.aquarium_lightning_effect
+    default:
+      - variables:
+          target_w: >
+            {% if elevation > 10 %}
+              {{ (base_brightness * (elevation / 90) * 1.2) | round(0) | int }}
+            {% else %}
+              {{ (base_brightness * 0.5) | round(0) | int }}
+            {% endif %}
+          target_r: >
+            {% if elevation < 15 %}
+              {{ (base_brightness * (1 - (elevation/15)) * 1.5) | round(0) | int }}
+            {% else %}
+              0
+            {% endif %}
+          target_g: "{{ (target_w * 0.5 + target_r * 0.5) | round(0) | int }}"
+          target_b: >
+            {% if elevation > 5 %}
+              {{ (base_brightness * (elevation / 90) * 0.8) | round(0) | int }}
+            {% else %}
+              0
+            {% endif %}
+      - variables:
+          target_w: >
+            {% if 'cloudy' in forecast %}
+              {{ ([10, (target_w * 0.6 + 2)] | min) | round(0) | int }}
+            {% else %}
+              {{ target_w }}
+            {% endif %}
+          target_r: >
+            {% if 'cloudy' in forecast %}
+              {{ (target_r * 0.5) | round(0) | int }}
+            {% else %}
+              {{ target_r }}
+            {% endif %}
+          target_w: >
+            {% if 'rainy' in forecast %}
+              {{ ([10, (target_w * 0.4 + 1)] | min) | round(0) | int }}
+            {% else %}
+              {{ target_w }}
+            {% endif %}
+          target_b: >
+            {% if 'rainy' in forecast %}
+              {{ ([10, (target_b * 0.7 + 2)] | min) | round(0) | int }}
+            {% else %}
+              {{ target_b }}
+            {% endif %}
+      - service: script.aquarium_reconcile_state
+        data:
+          target_w: "{{ [10, target_w] | min }}"
+          target_r: "{{ [10, target_r] | min }}"
+          target_g: "{{ [10, target_g] | min }}"
+          target_b: "{{ [10, target_b] | min }}"
+mode: single

@@ -1,0 +1,11 @@
+alias: Aquarium Daily Reset
+description: Runs the reset script late at night to prevent state drift.
+trigger:
+  - platform: time
+    at: "02:00:00"
+condition:
+action:
+  - service: script.turn_on
+    target:
+      entity_id: script.aquarium_reset_to_zero
+mode: single

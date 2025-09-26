@@ -1,0 +1,35 @@
+# Home Assistant specific
+.HA_VERSION
+home-assistant.log
+home-assistant_v2.db
+known_devices.yaml
+secrets.yaml
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
