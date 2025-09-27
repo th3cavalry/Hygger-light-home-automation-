@@ -130,6 +130,9 @@ This will force the light to a known zero state and then immediately ramp it up 
 ## Files in this Repository
 
 - `README.md` - This documentation
+- `SETUP_GUIDE.md` - Step-by-step setup instructions
+- `TROUBLESHOOTING.md` - Troubleshooting guide for common issues
+- `validate_config.py` - Configuration validation script
 - `scripts/` - Home Assistant script configurations
 - `automations/` - Home Assistant automation configurations
 - `dashboard/` - Dashboard YAML configuration
@@ -139,13 +142,21 @@ This will force the light to a known zero state and then immediately ramp it up 
 
 ### Common Issues
 
-1. **Lights not responding**: Check that your Broadlink RM4 Pro is connected and that all IR commands have been properly learned.
-2. **Weather data not updating**: Verify your OpenWeatherMap API key is active and the integration is configured for v3.0.
-3. **State drift**: Run the sync script manually or wait for the daily reset at 2:00 AM.
+1. **Sync Lights button not working**: This issue has been fixed in the latest version. If you're still experiencing issues, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+2. **Lights not responding**: Check that your Broadlink RM4 Pro is connected and that all IR commands have been properly learned.
+3. **Weather data not updating**: Verify your OpenWeatherMap API key is active and the integration is configured for v3.0.
+4. **State drift**: Run the sync script manually or wait for the daily reset at 2:00 AM.
 
 ### Manual Reset
 
 If the system gets out of sync, you can always use the "Sync Lights" button on the dashboard to reset everything to the correct state.
+
+### Configuration Validation
+
+Run the included validation script to check your configuration:
+```bash
+python3 validate_config.py
+```
 
 ## Contributing
 
