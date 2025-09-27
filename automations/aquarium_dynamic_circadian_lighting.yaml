@@ -16,10 +16,10 @@ action:
   - variables:
       forecast: >
         {% if hourly_forecast is defined and hourly_forecast %}
-          {{ hourly_forecast['weather.openweathermap'].forecast.condition }}
+          {{ hourly_forecast['weather.openweathermap'].forecast[0].condition }}
         {% elif states('input_text.aquarium_forecast_cache') | from_json %}
           {% set cached_data = states('input_text.aquarium_forecast_cache') | from_json %}
-          {{ cached_data['weather.openweathermap'].forecast.condition }}
+          {{ cached_data['weather.openweathermap'].forecast[0].condition }}
         {% else %}
           sunny
         {% endif %}
