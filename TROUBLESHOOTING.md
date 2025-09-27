@@ -4,19 +4,41 @@ This guide helps diagnose and fix common issues with the Hygger Light Home Autom
 
 ## Sync Lights Button Not Working
 
-If the "Sync Lights" button doesn't affect the physical lights but manual `remote.send_command` works:
+### Problem 1: Nothing Happens When Clicking Sync Lights (Most Common)
 
-### Root Cause
-This was typically caused by a weather forecast access error in the main automation. **This has been fixed in the latest version.**
+If clicking the "Sync Lights" button does absolutely nothing - lights don't even reset to zero:
 
-### Verification Steps
+**Root Cause**: Entity IDs don't match your actual devices.
+
+**Fix Steps**:
+1. **Find your actual Broadlink entity ID**:
+   - Go to Settings > Devices & Services
+   - Find your Broadlink device
+   - Note the entity ID (e.g., `remote.living_room_broadlink`)
+
+2. **Update all scripts** with your actual entity ID:
+   - Replace `remote.rm4_pro_remote` in all script files with your actual entity ID
+   - Files to update: `scripts/aquarium_reset_to_zero.yaml`, `scripts/aquarium_reconcile_state.yaml`, `scripts/aquarium_lightning_effect.yaml`
+
+3. **Test IR commands first**:
+   - Go to Developer Tools > Services
+   - Test `remote.send_command` with your actual entity ID
+   - Use device: `hygger_hg016` and command: `white_down`
+   - If this doesn't work, your IR commands aren't learned properly
+
+### Problem 2: Lights Reset to Zero But Don't Adjust to Proper State
+
+If lights reset to zero but don't adjust to proper brightness/color afterward:
+
+**Root Cause**: Weather forecast access error in main automation (fixed in latest version).
+
+**Verification Steps**:
 1. Check if your automations are enabled:
    - Go to Settings > Automations & Scenes > Automations
    - Ensure `Aquarium Dynamic Circadian Lighting` is turned ON
 
-2. Verify entity IDs match your setup:
-   - Update `remote.rm4_pro_remote` to your actual Broadlink entity ID in all scripts
-   - Update `weather.openweathermap` to your actual weather entity ID
+2. Update weather entity ID:
+   - Replace `weather.openweathermap` with your actual weather entity ID
 
 3. Test the sync manually:
    - Go to Developer Tools > Services

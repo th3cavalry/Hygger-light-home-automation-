@@ -121,11 +121,19 @@ Create a new dashboard for this project for a clean interface.
 
 ## Final Deployment Step
 
-Once all the helpers, scripts, and automations are created and enabled, your final step is to perform the initial synchronization.
+⚠️ **IMPORTANT**: Before testing, you must update the entity IDs in all configuration files to match your actual Home Assistant entities:
+
+1. **Update Broadlink Entity ID**: Replace `remote.rm4_pro_remote` with your actual Broadlink entity ID in ALL script files
+2. **Update Weather Entity ID**: Replace `weather.openweathermap` with your actual weather entity ID in automation files
+3. **Ensure all helper entities are created** as described in the Home Assistant Configuration section
+
+Once all the helpers, scripts, and automations are created and enabled, and entity IDs are updated, your final step is to perform the initial synchronization.
 
 **Press the "Sync Lights" button on your dashboard.**
 
 This will force the light to a known zero state and then immediately ramp it up to the correct color and brightness for the current time of day and weather. Your system is now fully operational.
+
+**If nothing happens when you click "Sync Lights", see [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - this is usually caused by incorrect entity IDs.**
 
 ## Files in this Repository
 
@@ -133,6 +141,7 @@ This will force the light to a known zero state and then immediately ramp it up 
 - `SETUP_GUIDE.md` - Step-by-step setup instructions
 - `TROUBLESHOOTING.md` - Troubleshooting guide for common issues
 - `validate_config.py` - Configuration validation script
+- `check_entities.py` - Entity ID configuration checker
 - `scripts/` - Home Assistant script configurations
 - `automations/` - Home Assistant automation configurations
 - `dashboard/` - Dashboard YAML configuration
@@ -142,7 +151,7 @@ This will force the light to a known zero state and then immediately ramp it up 
 
 ### Common Issues
 
-1. **Sync Lights button not working**: This issue has been fixed in the latest version. If you're still experiencing issues, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+1. **Sync Lights button does nothing at all**: Most commonly caused by incorrect entity IDs. Update `remote.rm4_pro_remote` and `weather.openweathermap` to match your actual entities. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 2. **Lights not responding**: Check that your Broadlink RM4 Pro is connected and that all IR commands have been properly learned.
 3. **Weather data not updating**: Verify your OpenWeatherMap API key is active and the integration is configured for v3.0.
 4. **State drift**: Run the sync script manually or wait for the daily reset at 2:00 AM.
@@ -156,6 +165,11 @@ If the system gets out of sync, you can always use the "Sync Lights" button on t
 Run the included validation script to check your configuration:
 ```bash
 python3 validate_config.py
+```
+
+Run the entity checker to identify configuration issues:
+```bash
+python3 check_entities.py
 ```
 
 ## Contributing
