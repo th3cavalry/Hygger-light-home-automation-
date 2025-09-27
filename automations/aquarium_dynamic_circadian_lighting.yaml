@@ -58,30 +58,28 @@ action:
               0
             {% endif %}
       - variables:
+          # Apply weather modifiers without duplicating keys
           target_w: >
+            {% set w = target_w %}
             {% if 'cloudy' in forecast %}
-              {{ ([10, (target_w * 0.6 + 2)] | min) | round(0) | int }}
-            {% else %}
-              {{ target_w }}
+              {% set w = ([10, (w * 0.6 + 2)] | min) %}
             {% endif %}
+            {% if 'rainy' in forecast %}
+              {% set w = ([10, (w * 0.4 + 1)] | min) %}
+            {% endif %}
+            {{ w | round(0) | int }}
           target_r: >
             {% if 'cloudy' in forecast %}
               {{ (target_r * 0.5) | round(0) | int }}
             {% else %}
               {{ target_r }}
             {% endif %}
-          target_w: >
-            {% if 'rainy' in forecast %}
-              {{ ([10, (target_w * 0.4 + 1)] | min) | round(0) | int }}
-            {% else %}
-              {{ target_w }}
-            {% endif %}
           target_b: >
+            {% set b = target_b %}
             {% if 'rainy' in forecast %}
-              {{ ([10, (target_b * 0.7 + 2)] | min) | round(0) | int }}
-            {% else %}
-              {{ target_b }}
+              {% set b = ([10, (b * 0.7 + 2)] | min) %}
             {% endif %}
+            {{ b | round(0) | int }}
       - service: script.aquarium_reconcile_state
         data:
           target_w: "{{ [10, target_w] | min }}"
