@@ -2,6 +2,8 @@ alias: Aquarium Lightning Effect
 description: Sets a dark base and then triggers the lightning effect.
 sequence:
   - service: script.aquarium_reconcile_state
+    target:
+      entity_id: script.aquarium_reconcile_state
     data:
       target_w: 1
       target_r: 0
