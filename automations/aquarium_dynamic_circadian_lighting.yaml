@@ -81,6 +81,8 @@ action:
             {% endif %}
             {{ b | round(0) | int }}
       - service: script.aquarium_reconcile_state
+        target:
+          entity_id: script.aquarium_reconcile_state
         data:
           target_w: "{{ [10, target_w] | min }}"
           target_r: "{{ [10, target_r] | min }}"
