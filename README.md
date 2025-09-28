@@ -58,10 +58,10 @@ The project is built around a central automation hub, Home Assistant, running in
 
 Using the Home Assistant interface, you need to teach the Broadlink the individual commands for adjusting each color's brightness.
 
-* Go to Developer Tools > Services.
-* Select the service `remote.learn_command`.
+* Go to Developer Tools > Actions.
+* Search for and select `Remote: Learn command`.
 * Choose your Broadlink device as the target.
-* Use the following device and command names to learn each of the eight required buttons one by one. After entering the names, click Call Service and press the corresponding button on the Hygger remote.
+* Use the following device and command names to learn each of the eight required buttons one by one. After entering the names, click "Perform action" and press the corresponding button on the Hygger remote.
   * `white_up`, `white_down`
   * `red_up`, `red_down`
   * `green_up`, `green_down`
