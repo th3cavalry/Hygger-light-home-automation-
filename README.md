@@ -96,6 +96,7 @@ See the `scripts/` directory for complete YAML configurations:
 - `script.aquarium_lightning_effect`
 - `script.aquarium_reset_to_zero`
 - `script.sync_aquarium_lights`
+- `script.aquarium_test_lights` - Sequential test script for troubleshooting
 
 ### 3. Automations
 
@@ -142,10 +143,39 @@ This will force the light to a known zero state and then immediately ramp it up 
 - `TROUBLESHOOTING.md` - Troubleshooting guide for common issues
 - `validate_config.py` - Configuration validation script
 - `check_entities.py` - Entity ID configuration checker
+- `test_lights.py` - Python script to simulate the light test sequence
 - `scripts/` - Home Assistant script configurations
 - `automations/` - Home Assistant automation configurations
 - `dashboard/` - Dashboard YAML configuration
 - `helpers/` - Helper entity configurations
+
+## Testing Your Setup
+
+### Light Test Script
+
+The system includes a comprehensive test script that cycles through each color channel to verify proper operation:
+
+**Home Assistant Script**: `script.aquarium_test_lights`
+- Sequence: White (0→10→0) → Red (0→10→0) → Green (0→10→0) → Blue (0→10→0) → All Zero
+- Import this script into Home Assistant and run it to test all IR commands
+- Ideal for initial setup verification and troubleshooting
+
+**Python Simulation**: `python3 test_lights.py`
+- Runs a visual simulation of the test sequence in your terminal
+- Useful for understanding the test pattern without hardware
+- No Home Assistant required
+
+### Configuration Validation
+
+Run the included validation script to check your configuration:
+```bash
+python3 validate_config.py
+```
+
+Run the entity checker to identify configuration issues:
+```bash
+python3 check_entities.py
+```
 
 ## Troubleshooting
 
@@ -159,18 +189,6 @@ This will force the light to a known zero state and then immediately ramp it up 
 ### Manual Reset
 
 If the system gets out of sync, you can always use the "Sync Lights" button on the dashboard to reset everything to the correct state.
-
-### Configuration Validation
-
-Run the included validation script to check your configuration:
-```bash
-python3 validate_config.py
-```
-
-Run the entity checker to identify configuration issues:
-```bash
-python3 check_entities.py
-```
 
 ## Contributing
 

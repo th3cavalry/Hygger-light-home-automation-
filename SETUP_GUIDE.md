@@ -126,6 +126,7 @@ In Settings > Automations & Scenes > Scripts, create these scripts using the YAM
 - `script.aquarium_lightning_effect`
 - `script.aquarium_reset_to_zero`
 - `script.sync_aquarium_lights`
+- `script.aquarium_test_lights` (optional - for testing and troubleshooting)
 
 **Important:** Update the entity IDs in each script:
 - Change `remote.rm4_pro_remote` to your actual Broadlink entity ID
@@ -165,6 +166,11 @@ In Settings > Automations & Scenes > Automations, create these automations using
 
 ## Step 8: Verification
 
+**Optional - Run Test Script:**
+- Execute the "Aquarium Test Lights" script to verify all color channels
+- This will cycle through White→Red→Green→Blue (0→10→0 for each)
+- Confirms all IR commands are working properly
+
 Verify your setup is working:
 - [ ] Light levels change based on time of day
 - [ ] Weather affects lighting (cloudy = dimmer, etc.)
@@ -172,6 +178,7 @@ Verify your setup is working:
 - [ ] Manual sync button works
 - [ ] Daily reset happens at 2:00 AM
 - [ ] System recovers after Home Assistant restart
+- [ ] Test script runs successfully (optional verification)
 
 ## Troubleshooting
 

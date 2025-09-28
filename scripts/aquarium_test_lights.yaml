@@ -1,0 +1,252 @@
+---
+# Aquarium Light Test Script
+# Tests each color channel sequentially: white (0→10→0), red (0→10→0), green (0→10→0), blue (0→10→0), then all to zero
+# This script helps verify that all IR commands and light channels are working properly
+
+alias: "Aquarium Test Lights"
+description: "Sequential test of all color channels for verification and troubleshooting"
+icon: "mdi:test-tube"
+mode: single
+
+sequence:
+  # Initial reset - ensure all lights start at zero
+  - service: script.aquarium_reset_to_zero
+  - delay:
+      seconds: 2
+
+  # Log start of test sequence
+  - service: system_log.write
+    data:
+      message: "Starting aquarium light test sequence"
+      level: info
+
+  # ==== WHITE CHANNEL TEST (0→10→0) ====
+  - service: system_log.write
+    data:
+      message: "Testing WHITE channel: 0→10→0"
+      level: info
+
+  # Ramp white up from 0 to 10
+  - repeat:
+      count: 10
+      sequence:
+        - service: remote.send_command
+          target:
+            entity_id: remote.rm4_pro_remote  # UPDATE: Change to your actual Broadlink entity ID
+          data:
+            device: hygger_hg016
+            command: white_up
+        - delay:
+            milliseconds: 300
+        - service: input_number.set_value
+          target:
+            entity_id: input_number.hygger_white_level
+          data:
+            value: "{{ repeat.index }}"
+        - delay:
+            milliseconds: 500
+
+  # Brief pause at max brightness
+  - delay:
+      seconds: 2
+
+  # Ramp white down from 10 to 0
+  - repeat:
+      count: 10
+      sequence:
+        - service: remote.send_command
+          target:
+            entity_id: remote.rm4_pro_remote  # UPDATE: Change to your actual Broadlink entity ID
+          data:
+            device: hygger_hg016
+            command: white_down
+        - delay:
+            milliseconds: 300
+        - service: input_number.set_value
+          target:
+            entity_id: input_number.hygger_white_level
+          data:
+            value: "{{ 10 - repeat.index }}"
+        - delay:
+            milliseconds: 500
+
+  # Pause between color tests
+  - delay:
+      seconds: 2
+
+  # ==== RED CHANNEL TEST (0→10→0) ====
+  - service: system_log.write
+    data:
+      message: "Testing RED channel: 0→10→0"
+      level: info
+
+  # Ramp red up from 0 to 10
+  - repeat:
+      count: 10
+      sequence:
+        - service: remote.send_command
+          target:
+            entity_id: remote.rm4_pro_remote  # UPDATE: Change to your actual Broadlink entity ID
+          data:
+            device: hygger_hg016
+            command: red_up
+        - delay:
+            milliseconds: 300
+        - service: input_number.set_value
+          target:
+            entity_id: input_number.hygger_red_level
+          data:
+            value: "{{ repeat.index }}"
+        - delay:
+            milliseconds: 500
+
+  # Brief pause at max brightness
+  - delay:
+      seconds: 2
+
+  # Ramp red down from 10 to 0
+  - repeat:
+      count: 10
+      sequence:
+        - service: remote.send_command
+          target:
+            entity_id: remote.rm4_pro_remote  # UPDATE: Change to your actual Broadlink entity ID
+          data:
+            device: hygger_hg016
+            command: red_down
+        - delay:
+            milliseconds: 300
+        - service: input_number.set_value
+          target:
+            entity_id: input_number.hygger_red_level
+          data:
+            value: "{{ 10 - repeat.index }}"
+        - delay:
+            milliseconds: 500
+
+  # Pause between color tests
+  - delay:
+      seconds: 2
+
+  # ==== GREEN CHANNEL TEST (0→10→0) ====
+  - service: system_log.write
+    data:
+      message: "Testing GREEN channel: 0→10→0"
+      level: info
+
+  # Ramp green up from 0 to 10
+  - repeat:
+      count: 10
+      sequence:
+        - service: remote.send_command
+          target:
+            entity_id: remote.rm4_pro_remote  # UPDATE: Change to your actual Broadlink entity ID
+          data:
+            device: hygger_hg016
+            command: green_up
+        - delay:
+            milliseconds: 300
+        - service: input_number.set_value
+          target:
+            entity_id: input_number.hygger_green_level
+          data:
+            value: "{{ repeat.index }}"
+        - delay:
+            milliseconds: 500
+
+  # Brief pause at max brightness
+  - delay:
+      seconds: 2
+
+  # Ramp green down from 10 to 0
+  - repeat:
+      count: 10
+      sequence:
+        - service: remote.send_command
+          target:
+            entity_id: remote.rm4_pro_remote  # UPDATE: Change to your actual Broadlink entity ID
+          data:
+            device: hygger_hg016
+            command: green_down
+        - delay:
+            milliseconds: 300
+        - service: input_number.set_value
+          target:
+            entity_id: input_number.hygger_green_level
+          data:
+            value: "{{ 10 - repeat.index }}"
+        - delay:
+            milliseconds: 500
+
+  # Pause between color tests
+  - delay:
+      seconds: 2
+
+  # ==== BLUE CHANNEL TEST (0→10→0) ====
+  - service: system_log.write
+    data:
+      message: "Testing BLUE channel: 0→10→0"
+      level: info
+
+  # Ramp blue up from 0 to 10
+  - repeat:
+      count: 10
+      sequence:
+        - service: remote.send_command
+          target:
+            entity_id: remote.rm4_pro_remote  # UPDATE: Change to your actual Broadlink entity ID
+          data:
+            device: hygger_hg016
+            command: blue_up
+        - delay:
+            milliseconds: 300
+        - service: input_number.set_value
+          target:
+            entity_id: input_number.hygger_blue_level
+          data:
+            value: "{{ repeat.index }}"
+        - delay:
+            milliseconds: 500
+
+  # Brief pause at max brightness
+  - delay:
+      seconds: 2
+
+  # Ramp blue down from 10 to 0
+  - repeat:
+      count: 10
+      sequence:
+        - service: remote.send_command
+          target:
+            entity_id: remote.rm4_pro_remote  # UPDATE: Change to your actual Broadlink entity ID
+          data:
+            device: hygger_hg016
+            command: blue_down
+        - delay:
+            milliseconds: 300
+        - service: input_number.set_value
+          target:
+            entity_id: input_number.hygger_blue_level
+          data:
+            value: "{{ 10 - repeat.index }}"
+        - delay:
+            milliseconds: 500
+
+  # Final pause before completion
+  - delay:
+      seconds: 2
+
+  # ==== FINAL RESET TO ZERO ====
+  - service: system_log.write
+    data:
+      message: "Light test complete - performing final reset to zero"
+      level: info
+
+  # Ensure all lights are completely off
+  - service: script.aquarium_reset_to_zero
+
+  # Log completion
+  - service: system_log.write
+    data:
+      message: "Aquarium light test sequence completed successfully - all channels at 0"
+      level: info
