@@ -1,91 +1,194 @@
-# This is the main "brain" automation. It runs every minute.
-alias: Aquarium Dynamic Circadian Lighting
-description: Runs every minute to adjust light based on sun and weather forecast.
+---
+# Aquarium Dynamic Circadian Lighting Automation  
+# The main "brain" of the lighting system - runs every minute to adjust lights
+# Combines sun position, weather data, and user preferences for realistic lighting
+#
+# Features:
+# - Solar elevation-based brightness calculation
+# - Weather condition modifiers (cloudy, rainy, sunny)
+# - Storm lightning effects (when enabled)
+# - Comprehensive error handling and fallback logic
+# - Detailed logging for debugging and monitoring
+
+alias: "Aquarium Dynamic Circadian Lighting"
+description: "Main lighting controller - adjusts aquarium lights every minute based on sun position and weather conditions"
+mode: single                           # Prevent overlapping executions
+
+# Trigger Configuration - Execute every minute for smooth transitions
 trigger:
-  - platform: time_pattern
-    minutes: "/1"
-condition:
+  - platform: time_pattern             # Time-based pattern trigger
+    minutes: "/1"                      # Every minute (creates smooth lighting transitions)
+    id: "circadian_update"             # Unique trigger identifier
+
+# Conditions (none required - always execute when triggered)
+condition: []
+
+# Action Sequence - Complex lighting calculation and adjustment logic
 action:
+  # Step 1: Attempt to get fresh weather forecast data
   - service: weather.get_forecasts
     target:
-      entity_id: weather.openweathermap # CHANGE TO YOUR WEATHER ENTITY
+      entity_id: weather.openweathermap # UPDATE: Change to your actual weather entity ID
     data:
-      type: hourly
-    response_variable: hourly_forecast
-    continue_on_error: true
+      type: hourly                     # Get hourly forecast for detailed conditions
+    response_variable: hourly_forecast # Store API response
+    continue_on_error: true            # Don't fail if API is down
+
+  # Step 2: Determine weather conditions with fallback logic
   - variables:
-      forecast: >
+      # Primary weather condition determination with multiple fallback layers
+      weather_condition: >
         {% if hourly_forecast is defined and hourly_forecast %}
+          {# Use fresh API data if available #}
           {{ hourly_forecast['weather.openweathermap'].forecast[0].condition }}
-        {% elif states('input_text.aquarium_forecast_cache') | from_json %}
+        {% elif states('input_text.aquarium_forecast_cache') | length > 10 %}
+          {# Fall back to cached weather data #}
           {% set cached_data = states('input_text.aquarium_forecast_cache') | from_json %}
-          {{ cached_data['weather.openweathermap'].forecast[0].condition }}
+          {% if cached_data.hourly is defined %}
+            {{ cached_data.hourly['weather.openweathermap'].forecast[0].condition }}
+          {% elif cached_data.daily is defined %}
+            {{ cached_data.daily['weather.openweathermap'].forecast[0].condition }}
+          {% else %}
+            sunny
+          {% endif %}
         {% else %}
+          {# Ultimate fallback - assume sunny conditions #}
           sunny
         {% endif %}
-      elevation: "{{ state_attr('sun.sun', 'elevation') }}"
-      base_brightness: "{{ [0, (elevation / 9) | round(0) | int] | max }}"
+      
+      # Sun elevation for lighting calculations
+      sun_elevation: "{{ state_attr('sun.sun', 'elevation') | float(0) }}"
+      
+      # Base brightness calculation based on sun elevation
+      # Formula: elevation ÷ 9 with minimum of 0 and maximum of 10
+      base_brightness: "{{ [0, (sun_elevation / 9) | round(0) | int, 10] | sort | list[1] }}"
+
+  # Step 3: Log current conditions for debugging
+  - service: system_log.write
+    data:
+      message: >
+        Circadian update: Sun={{ sun_elevation }}°, Base={{ base_brightness }}, 
+        Weather={{ weather_condition }}, Time={{ now().strftime('%H:%M') }}
+      level: debug
+      logger: aquarium.circadian
+
+  # Step 4: Check for lightning conditions and handle special effects
   - choose:
+      # Lightning Effect Branch - Execute when storm conditions detected and lightning enabled
       - conditions:
           - condition: template
-            value_template: "{{ forecast in ['lightning', 'lightning-rainy'] }}"
+            value_template: "{{ weather_condition in ['lightning', 'lightning-rainy', 'thunderstorm'] }}"
           - condition: state
             entity_id: input_boolean.enable_aquarium_lightning
             state: 'on'
         sequence:
+          # Log lightning effect activation
+          - service: system_log.write
+            data:
+              message: "Storm detected with lightning enabled - triggering lightning effect"
+              level: info
+              logger: aquarium.circadian
+          
+          # Execute lightning effect script
           - service: script.turn_on
             target:
               entity_id: script.aquarium_lightning_effect
+            continue_on_error: true    # Continue even if lightning effect fails
+
+    # Default Branch - Normal lighting calculations
     default:
+      # Step 5: Calculate target light levels based on sun elevation
       - variables:
-          target_w: >
-            {% if elevation > 10 %}
-              {{ (base_brightness * (elevation / 90) * 1.2) | round(0) | int }}
+          # White Channel Calculation - Primary illumination
+          # Stronger during high sun elevation, dimmer at low angles
+          target_white: >
+            {% if sun_elevation > 10 %}
+              {{ (base_brightness * (sun_elevation / 90) * 1.2) | round(0) | int }}
             {% else %}
               {{ (base_brightness * 0.5) | round(0) | int }}
             {% endif %}
-          target_r: >
-            {% if elevation < 15 %}
-              {{ (base_brightness * (1 - (elevation/15)) * 1.5) | round(0) | int }}
+          
+          # Red Channel Calculation - Warm sunrise/sunset effects
+          # Strongest at low sun elevations, fades during midday
+          target_red: >
+            {% if sun_elevation < 15 %}
+              {{ (base_brightness * (1 - (sun_elevation/15)) * 1.5) | round(0) | int }}
             {% else %}
               0
             {% endif %}
-          target_g: "{{ (target_w * 0.5 + target_r * 0.5) | round(0) | int }}"
-          target_b: >
-            {% if elevation > 5 %}
-              {{ (base_brightness * (elevation / 90) * 0.8) | round(0) | int }}
+          
+          # Green Channel Calculation - Natural balance
+          # Blend of white and red for natural color temperature
+          target_green: "{{ (target_white * 0.5 + target_red * 0.5) | round(0) | int }}"
+          
+          # Blue Channel Calculation - Cool water effects
+          # Moderate strength during daylight hours
+          target_blue: >
+            {% if sun_elevation > 5 %}
+              {{ (base_brightness * (sun_elevation / 90) * 0.8) | round(0) | int }}
             {% else %}
               0
             {% endif %}
+
+      # Step 6: Apply weather condition modifiers
       - variables:
-          # Apply weather modifiers without duplicating keys
-          target_w: >
-            {% set w = target_w %}
-            {% if 'cloudy' in forecast %}
+          # Weather-Modified White Channel
+          modified_white: >
+            {% set w = target_white %}
+            {% if 'cloudy' in weather_condition %}
               {% set w = ([10, (w * 0.6 + 2)] | min) %}
             {% endif %}
-            {% if 'rainy' in forecast %}
+            {% if 'rainy' in weather_condition %}
               {% set w = ([10, (w * 0.4 + 1)] | min) %}
             {% endif %}
             {{ w | round(0) | int }}
-          target_r: >
-            {% if 'cloudy' in forecast %}
-              {{ (target_r * 0.5) | round(0) | int }}
+          
+          # Weather-Modified Red Channel
+          modified_red: >
+            {% if 'cloudy' in weather_condition %}
+              {{ (target_red * 0.5) | round(0) | int }}
             {% else %}
-              {{ target_r }}
+              {{ target_red }}
             {% endif %}
-          target_b: >
-            {% set b = target_b %}
-            {% if 'rainy' in forecast %}
+          
+          # Weather-Modified Green Channel (recalculated with modified values)
+          modified_green: "{{ (modified_white * 0.5 + modified_red * 0.5) | round(0) | int }}"
+          
+          # Weather-Modified Blue Channel
+          modified_blue: >
+            {% set b = target_blue %}
+            {% if 'rainy' in weather_condition %}
               {% set b = ([10, (b * 0.7 + 2)] | min) %}
             {% endif %}
             {{ b | round(0) | int }}
+
+      # Step 7: Ensure all values are within valid range (0-10) and log calculations
+      - variables:
+          final_white: "{{ [0, [10, modified_white] | min] | max }}"
+          final_red: "{{ [0, [10, modified_red] | min] | max }}"
+          final_green: "{{ [0, [10, modified_green] | min] | max }}"
+          final_blue: "{{ [0, [10, modified_blue] | min] | max }}"
+
+      # Step 8: Log calculated target values for debugging
+      - service: system_log.write
+        data:
+          message: >
+            Target levels: W={{ final_white }}, R={{ final_red }}, 
+            G={{ final_green }}, B={{ final_blue }}
+          level: debug
+          logger: aquarium.circadian
+
+      # Step 9: Execute state reconciliation with calculated targets
       - service: script.aquarium_reconcile_state
         target:
           entity_id: script.aquarium_reconcile_state
         data:
-          target_w: "{{ [10, target_w] | min }}"
-          target_r: "{{ [10, target_r] | min }}"
-          target_g: "{{ [10, target_g] | min }}"
-          target_b: "{{ [10, target_b] | min }}"
-mode: single
+          target_w: "{{ final_white }}"
+          target_r: "{{ final_red }}"
+          target_g: "{{ final_green }}"
+          target_b: "{{ final_blue }}"
+        continue_on_error: true        # Continue even if reconciliation fails
+
+# Error Recovery: All critical operations use 'continue_on_error' to ensure
+# the automation doesn't get stuck on transient failures. System will retry
+# on the next minute cycle.

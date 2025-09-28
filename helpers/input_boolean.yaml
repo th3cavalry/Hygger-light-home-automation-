@@ -1,7 +1,33 @@
-# Toggle helper to enable/disable the lightning effect
-# Create this in Settings > Devices & Services > Helpers
+---
+# Hygger Aquarium Light Helper Entities - Boolean Input
+# This boolean helper controls special lighting effects
+# It serves as a user-controllable toggle for advanced features
+#
+# Creation Instructions:
+# 1. Go to Settings > Devices & Services > Helpers
+# 2. Create "Toggle" helper with settings shown below
+# 3. Configure with exact entity ID for automation compatibility
+#
+# IMPORTANT: Entity ID must match exactly for automations to work
+# This helper is referenced by the main lighting automation
 
 input_boolean:
+  # Lightning Effect Controller
+  # Enables/disables automatic lightning effects during storms
+  # When enabled, system will create dramatic lightning flashes during stormy weather
   enable_aquarium_lightning:
     name: "Enable Aquarium Lightning"
-    icon: mdi:weather-lightning
+    icon: mdi:weather-lightning        # Lightning bolt icon
+    initial: false                     # Default state (disabled for safety)
+
+# Usage Notes:
+# - Toggle ON to enable lightning effects during storm weather
+# - Toggle OFF to disable special effects (standard lighting only)
+# - Lightning effects only trigger when weather conditions indicate storms
+# - Effects are automatically coordinated with weather forecast data
+# - Manual toggle allows user control over dramatic lighting changes
+#
+# Safety Considerations:
+# - Default OFF prevents unexpected bright flashes
+# - User must explicitly enable for lightning effects
+# - Can be toggled during operation without restarting automations
