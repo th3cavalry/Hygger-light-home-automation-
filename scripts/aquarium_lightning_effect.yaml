@@ -1,21 +1,63 @@
-alias: Aquarium Lightning Effect
-description: Sets a dark base and then triggers the lightning effect.
+---
+# Aquarium Lightning Effect Script
+# Creates a dramatic lightning effect by setting a dark base lighting
+# and then triggering the special lightning command
+
+alias: "Aquarium Lightning Effect"
+description: "Sets a dark base and triggers the lightning effect for storm simulation"
+icon: "mdi:weather-lightning-rainy"
+mode: single
+
 sequence:
-  - service: script.aquarium_reconcile_state
+  # Check if lightning effect is enabled
+  - condition: state
+    entity_id: input_boolean.enable_aquarium_lightning
+    state: "on"
+
+  # Log lightning effect activation
+  - service: system_log.write
+    data:
+      message: "Aquarium lightning effect activated"
+      level: info
+
+  # Set a dark, stormy base lighting
+  # Low white and blue for stormy atmosphere, minimal red/green
+  - service: script.turn_on
     target:
       entity_id: script.aquarium_reconcile_state
     data:
-      target_w: 1
-      target_r: 0
-      target_g: 1
-      target_b: 2
+      target_w: 1    # Very dim white
+      target_r: 0    # No red
+      target_g: 1    # Minimal green
+      target_b: 2    # Slight blue for stormy feel
+
+  # Wait for base lighting to be set
   - delay:
-      seconds: 5
+      seconds: 3
+
+  # Trigger the dramatic lightning flash
   - service: remote.send_command
     target:
-      entity_id: remote.rm4_pro_remote # CHANGE TO YOUR BROADLINK ENTITY
+      entity_id: remote.rm4_pro_remote  # UPDATE: Change to your actual Broadlink entity ID
     data:
       device: hygger_hg016
       command: weather_lightning
-mode: single
-icon: mdi:weather-lightning-rainy
+
+  # Brief pause to let the effect complete
+  - delay:
+      seconds: 2
+
+  # Optional: Return to normal lighting after effect
+  # Uncomment the following lines if you want automatic return to normal
+  #
+  # - service: automation.trigger
+  #   target:
+  #     entity_id: automation.aquarium_dynamic_circadian_lighting
+  #   data:
+  #     skip_conditions: true
+
+  # Log completion
+  - service: system_log.write
+    data:
+      message: "Aquarium lightning effect completed"
+      level: info
