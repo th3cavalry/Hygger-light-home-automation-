@@ -21,8 +21,8 @@ If clicking the "Sync Lights" button does absolutely nothing - lights don't even
    - Files to update: `scripts/aquarium_reset_to_zero.yaml`, `scripts/aquarium_reconcile_state.yaml`, `scripts/aquarium_lightning_effect.yaml`
 
 3. **Test IR commands first**:
-   - Go to Developer Tools > Services
-   - Test `remote.send_command` with your actual entity ID
+   - Go to Developer Tools > Actions
+   - Search for and test `Remote: Send command` with your actual entity ID
    - Use device: `hygger_hg016` and command: `white_down`
    - If this doesn't work, your IR commands aren't learned properly
 
@@ -41,8 +41,8 @@ If lights reset to zero but don't adjust to proper brightness/color afterward:
    - Replace `weather.openweathermap` with your actual weather entity ID
 
 3. Test the sync manually:
-   - Go to Developer Tools > Services
-   - Call `script.turn_on` with entity `script.sync_aquarium_lights`
+   - Go to Developer Tools > Actions
+   - Search for and call `Script: Turn on` with entity `script.sync_aquarium_lights`
    - Check Home Assistant logs for any errors
 
 ### Debug Process
@@ -60,8 +60,8 @@ If lights reset to zero but don't adjust to proper brightness/color afterward:
    - Ensure API key is active (can take up to 2 hours after creation)
 
 3. **Test IR Commands**:
-   - Go to Developer Tools > Services
-   - Test `remote.send_command` with your Broadlink entity
+   - Go to Developer Tools > Actions
+   - Search for and test `Remote: Send command` with your Broadlink entity
    - Use device: `hygger_hg016` and commands like `white_up`, `white_down`
 
 ## Other Common Issues
@@ -69,7 +69,7 @@ If lights reset to zero but don't adjust to proper brightness/color afterward:
 ### Lights Not Responding at All
 - Verify Broadlink RM4 Pro is connected to WiFi
 - Check that all IR commands have been learned properly
-- Test individual commands via Developer Tools
+- Test individual commands via Developer Tools > Actions
 
 ### Weather Data Not Updating
 - Verify OpenWeatherMap API key is active

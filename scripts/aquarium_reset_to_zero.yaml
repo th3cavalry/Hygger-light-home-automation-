@@ -1,12 +1,23 @@
-alias: Aquarium Reset to Zero
-description: Sends repeated 'down' commands to ensure all channels are at 0.
+---
+# Aquarium Reset to Zero Script
+# Resets all light channels to zero state by sending repeated down commands
+# This ensures the physical light state matches the helper values
+
+alias: "Aquarium Reset to Zero"
+description: "Sends repeated 'down' commands to ensure all channels are at 0"
+icon: "mdi:restore"
+mode: single
+
 sequence:
+  # Send multiple down commands to ensure complete reset
+  # Using 12 repetitions to guarantee zero state even if starting at max (10)
   - repeat:
       count: 12
       sequence:
+        # Send all down commands simultaneously for efficiency
         - service: remote.send_command
           target:
-            entity_id: remote.rm4_pro_remote # CHANGE TO YOUR BROADLINK ENTITY
+            entity_id: remote.rm4_pro_remote  # UPDATE: Change to your actual Broadlink entity ID
           data:
             device: hygger_hg016
             command:
@@ -14,8 +25,11 @@ sequence:
               - red_down
               - green_down
               - blue_down
+        # Short delay between command batches to prevent IR interference
         - delay:
-            milliseconds: 250
+            milliseconds: 200
+
+  # Update all helper entities to reflect zero state
   - service: input_number.set_value
     target:
       entity_id:
@@ -25,4 +39,9 @@ sequence:
         - input_number.hygger_blue_level
     data:
       value: 0
-mode: single
+
+  # Optional: Log the reset action for debugging
+  - service: system_log.write
+    data:
+      message: "Aquarium lights reset to zero - all channels at 0"
+      level: info

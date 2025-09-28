@@ -1,15 +1,50 @@
-alias: Sync Aquarium Lights
-description: Resets the light to zero then applies the current correct state.
+---
+# Sync Aquarium Lights Script
+# The master synchronization script that resets lights to zero state
+# and then applies the correct lighting based on current time and weather
+
+alias: "Sync Aquarium Lights"
+description: "Resets lights to zero then applies the current correct state"
+icon: "mdi:sync"
+mode: single
+
 sequence:
+  # Log sync operation start
+  - service: system_log.write
+    data:
+      message: "Aquarium light sync started - resetting to zero first"
+      level: info
+
+  # Step 1: Reset all lights to zero state
   - service: script.turn_on
     target:
       entity_id: script.aquarium_reset_to_zero
+
+  # Wait for reset to complete
+  # Reduced from 20 seconds to optimize user experience
   - delay:
-      seconds: 20
+      seconds: 15
+
+  # Step 2: Apply current correct lighting state
+  # This triggers the main automation to calculate and set proper lighting
   - service: automation.trigger
     target:
-      entity_id: automation.aquarium_dynamic_circadian_lighting # Ensure your main automation entity_id matches this
+      entity_id: automation.aquarium_dynamic_circadian_lighting
     data:
       skip_conditions: true
-mode: single
-icon: mdi:sync
+
+  # Brief delay to allow automation to complete
+  - delay:
+      seconds: 5
+
+  # Log sync completion
+  - service: system_log.write
+    data:
+      message: "Aquarium light sync completed successfully"
+      level: info
+
+  # Optional: Send notification (uncomment if you have notify service configured)
+  # - service: notify.persistent_notification
+  #   data:
+  #     title: "Aquarium Sync Complete"
+  #     message: "Lights have been synchronized to current time and weather conditions"

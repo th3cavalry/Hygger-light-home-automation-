@@ -1,0 +1,21 @@
+alias: Aquarium Lightning Effect
+description: Sets a dark base and then triggers the lightning effect.
+sequence:
+  - service: script.aquarium_reconcile_state
+    target:
+      entity_id: script.aquarium_reconcile_state
+    data:
+      target_w: 1
+      target_r: 0
+      target_g: 1
+      target_b: 2
+  - delay:
+      seconds: 5
+  - service: remote.send_command
+    target:
+      entity_id: remote.rm4_pro_remote # CHANGE TO YOUR BROADLINK ENTITY
+    data:
+      device: hygger_hg016
+      command: weather_lightning
+mode: single
+icon: mdi:weather-lightning-rainy

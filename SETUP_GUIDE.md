@@ -71,8 +71,8 @@ Before starting, ensure you have:
 You need to teach the Broadlink the IR commands from your Hygger remote.
 
 1. **Open Developer Tools:**
-   - Go to Developer Tools > Services
-   - Select service: `remote.learn_command`
+   - Go to Developer Tools > Actions
+   - Search for and select: `Remote: Learn command`
    - Choose your Broadlink device as target
 
 2. **Learn Each Command:**
@@ -92,7 +92,7 @@ You need to teach the Broadlink the IR commands from your Hygger remote.
 3. **Learning Process:**
    - Enter device name: `hygger_hg016`
    - Enter command name (e.g., `white_up`)
-   - Click "Call Service"
+   - Click "Perform action"
    - Press the corresponding button on your Hygger remote
    - Repeat for all 9 commands
 
