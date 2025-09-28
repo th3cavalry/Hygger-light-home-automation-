@@ -15,205 +15,208 @@ title: "Aquarium Control"
 path: aquarium-control
 icon: mdi:fishbowl-outline
 badges: []
+views:
+  - title: "Main Control"
+    path: main-control
+    icon: mdi:fishbowl-outline
+    badges: []
+    cards:
+      # Weather Information Card
+      # Shows current weather data source and conditions affecting lighting
+      - type: weather-forecast
+        entity: weather.openweathermap        # UPDATE: Change to your actual weather entity ID
+        name: "Weather Data Source"
+        forecast_type: hourly                 # Show hourly forecast for detailed view
+        show_current: true                    # Display current conditions
+        show_forecast: true                   # Show forecast data
+        
+      # Primary Control Panel  
+      # Main controls for lighting system operation
+      - type: entities
+        title: "🎮 Aquarium Lighting Control"
+        show_header_toggle: false
+        state_color: true                     # Enable colored state indicators
+        entities:
+          # Lightning Effect Toggle
+          - entity: input_boolean.enable_aquarium_lightning
+            name: "⚡ Enable Lightning Effects"
+            icon: mdi:weather-lightning
+            tap_action:
+              action: toggle                  # Toggle on tap
+            secondary_info: >
+              {% if is_state('input_boolean.enable_aquarium_lightning', 'on') %}
+                Lightning effects enabled during storms
+              {% else %}
+                Lightning effects disabled
+              {% endif %}
+          
+          # Manual Sync Button
+          - entity: script.sync_aquarium_lights
+            name: "🔄 Sync Lights"
+            icon: mdi:sync
+            tap_action:
+              action: call-service           # Call service on tap
+              service: script.turn_on
+              service_data:
+                entity_id: script.sync_aquarium_lights
+            secondary_info: "Force lights to match current conditions"
 
-# Card Layout - Organized in logical sections for optimal user experience
-cards:
-  # Weather Information Card
-  # Shows current weather data source and conditions affecting lighting
-  - type: weather-forecast
-    entity: weather.openweathermap        # UPDATE: Change to your actual weather entity ID
-    name: "Weather Data Source"
-    forecast_type: hourly                 # Show hourly forecast for detailed view
-    show_current: true                    # Display current conditions
-    show_forecast: true                   # Show forecast data
-    
-  # Primary Control Panel  
-  # Main controls for lighting system operation
-  - type: entities
-    title: "🎮 Aquarium Lighting Control"
-    show_header_toggle: false
-    state_color: true                     # Enable colored state indicators
-    entities:
-      # Lightning Effect Toggle
-      - entity: input_boolean.enable_aquarium_lightning
-        name: "⚡ Enable Lightning Effects"
-        icon: mdi:weather-lightning
-        tap_action:
-          action: toggle                  # Toggle on tap
-        secondary_info: >
-          {% if is_state('input_boolean.enable_aquarium_lightning', 'on') %}
-            Lightning effects enabled during storms
-          {% else %}
-            Lightning effects disabled
-          {% endif %}
-      
-      # Manual Sync Button
-      - entity: script.sync_aquarium_lights
-        name: "🔄 Sync Lights"
-        icon: mdi:sync
-        tap_action:
-          action: call-service           # Call service on tap
-          service: script.turn_on
-          service_data:
-            entity_id: script.sync_aquarium_lights
-        secondary_info: "Force lights to match current conditions"
+      # Current Light Levels Display
+      # Shows real-time status of all color channels with visual indicators
+      - type: entities  
+        title: "💡 Current Light Levels"
+        show_header_toggle: false
+        state_color: true
+        entities:
+          # White Channel Status
+          - entity: input_number.hygger_white_level
+            name: "🔳 White Channel"
+            icon: mdi:lightbulb-outline
+            secondary_info: >
+              {% set level = states('input_number.hygger_white_level') | int %}
+              {% if level == 0 %}Off
+              {% elif level <= 3 %}Low ({{ level }}/10)
+              {% elif level <= 7 %}Medium ({{ level }}/10)  
+              {% else %}High ({{ level }}/10)
+              {% endif %}
 
-  # Current Light Levels Display
-  # Shows real-time status of all color channels with visual indicators
-  - type: entities  
-    title: "💡 Current Light Levels"
-    show_header_toggle: false
-    state_color: true
-    entities:
-      # White Channel Status
-      - entity: input_number.hygger_white_level
-        name: "🔳 White Channel"
-        icon: mdi:lightbulb-outline
-        secondary_info: >
-          {% set level = states('input_number.hygger_white_level') | int %}
-          {% if level == 0 %}Off
-          {% elif level <= 3 %}Low ({{ level }}/10)
-          {% elif level <= 7 %}Medium ({{ level }}/10)  
-          {% else %}High ({{ level }}/10)
-          {% endif %}
+          # Red Channel Status  
+          - entity: input_number.hygger_red_level
+            name: "🔴 Red Channel"
+            icon: mdi:lightbulb-outline
+            secondary_info: >
+              {% set level = states('input_number.hygger_red_level') | int %}
+              {% if level == 0 %}Off
+              {% elif level <= 3 %}Low ({{ level }}/10)
+              {% elif level <= 7 %}Medium ({{ level }}/10)
+              {% else %}High ({{ level }}/10)
+              {% endif %}
 
-      # Red Channel Status  
-      - entity: input_number.hygger_red_level
-        name: "🔴 Red Channel"
-        icon: mdi:lightbulb-outline
-        secondary_info: >
-          {% set level = states('input_number.hygger_red_level') | int %}
-          {% if level == 0 %}Off
-          {% elif level <= 3 %}Low ({{ level }}/10)
-          {% elif level <= 7 %}Medium ({{ level }}/10)
-          {% else %}High ({{ level }}/10)
-          {% endif %}
+          # Green Channel Status
+          - entity: input_number.hygger_green_level  
+            name: "🟢 Green Channel"
+            icon: mdi:lightbulb-outline
+            secondary_info: >
+              {% set level = states('input_number.hygger_green_level') | int %}
+              {% if level == 0 %}Off
+              {% elif level <= 3 %}Low ({{ level }}/10)
+              {% elif level <= 7 %}Medium ({{ level }}/10)
+              {% else %}High ({{ level }}/10)
+              {% endif %}
 
-      # Green Channel Status
-      - entity: input_number.hygger_green_level  
-        name: "🟢 Green Channel"
-        icon: mdi:lightbulb-outline
-        secondary_info: >
-          {% set level = states('input_number.hygger_green_level') | int %}
-          {% if level == 0 %}Off
-          {% elif level <= 3 %}Low ({{ level }}/10)
-          {% elif level <= 7 %}Medium ({{ level }}/10)
-          {% else %}High ({{ level }}/10)
-          {% endif %}
+          # Blue Channel Status
+          - entity: input_number.hygger_blue_level
+            name: "🔵 Blue Channel" 
+            icon: mdi:lightbulb-outline
+            secondary_info: >
+              {% set level = states('input_number.hygger_blue_level') | int %}
+              {% if level == 0 %}Off
+              {% elif level <= 3 %}Low ({{ level }}/10)
+              {% elif level <= 7 %}Medium ({{ level }}/10)
+              {% else %}High ({{ level }}/10)
+              {% endif %}
 
-      # Blue Channel Status
-      - entity: input_number.hygger_blue_level
-        name: "🔵 Blue Channel" 
-        icon: mdi:lightbulb-outline
-        secondary_info: >
-          {% set level = states('input_number.hygger_blue_level') | int %}
-          {% if level == 0 %}Off
-          {% elif level <= 3 %}Low ({{ level }}/10)
-          {% elif level <= 7 %}Medium ({{ level }}/10)
-          {% else %}High ({{ level }}/10)
-          {% endif %}
+      # Environmental Status Card
+      # Shows environmental factors affecting lighting calculations  
+      - type: entities
+        title: "🌅 Environmental Status"
+        show_header_toggle: false
+        state_color: true
+        entities:
+          # Sun Position Information
+          - entity: sun.sun
+            name: "☀️ Sun Position"
+            secondary_info: >
+              Elevation: {{ state_attr('sun.sun', 'elevation') | round(1) }}° 
+              ({{ states('sun.sun') | title }})
 
-  # Environmental Status Card
-  # Shows environmental factors affecting lighting calculations  
-  - type: entities
-    title: "🌅 Environmental Status"
-    show_header_toggle: false
-    state_color: true
-    entities:
-      # Sun Position Information
-      - entity: sun.sun
-        name: "☀️ Sun Position"
-        secondary_info: >
-          Elevation: {{ state_attr('sun.sun', 'elevation') | round(1) }}° 
-          ({{ states('sun.sun') | title }})
+          # Weather Cache Status
+          - entity: input_text.aquarium_forecast_cache
+            name: "🌤️ Weather Cache"
+            secondary_info: >
+              {% set cache_size = states('input_text.aquarium_forecast_cache') | length %}
+              {% if cache_size > 100 %}
+                Cached ({{ cache_size }} chars) - Last update available
+              {% elif cache_size > 10 %}
+                Partial cache ({{ cache_size }} chars) 
+              {% else %}
+                Empty - Check weather integration
+              {% endif %}
 
-      # Weather Cache Status
-      - entity: input_text.aquarium_forecast_cache
-        name: "🌤️ Weather Cache"
-        secondary_info: >
-          {% set cache_size = states('input_text.aquarium_forecast_cache') | length %}
-          {% if cache_size > 100 %}
-            Cached ({{ cache_size }} chars) - Last update available
-          {% elif cache_size > 10 %}
-            Partial cache ({{ cache_size }} chars) 
-          {% else %}
-            Empty - Check weather integration
-          {% endif %}
+      # System Status & Automation Health
+      # Monitor automation status and system health
+      - type: entities
+        title: "⚙️ System Status"
+        show_header_toggle: false  
+        state_color: true
+        entities:
+          # Main Lighting Automation
+          - entity: automation.aquarium_dynamic_circadian_lighting
+            name: "🧠 Main Automation"
+            secondary_info: >
+              {% if is_state('automation.aquarium_dynamic_circadian_lighting', 'on') %}
+                Active - Adjusting lights every minute  
+              {% else %}
+                DISABLED - Enable for automatic lighting
+              {% endif %}
 
-  # System Status & Automation Health
-  # Monitor automation status and system health
-  - type: entities
-    title: "⚙️ System Status"
-    show_header_toggle: false  
-    state_color: true
-    entities:
-      # Main Lighting Automation
-      - entity: automation.aquarium_dynamic_circadian_lighting
-        name: "🧠 Main Automation"
-        secondary_info: >
-          {% if is_state('automation.aquarium_dynamic_circadian_lighting', 'on') %}
-            Active - Adjusting lights every minute  
-          {% else %}
-            DISABLED - Enable for automatic lighting
-          {% endif %}
+          # Daily Reset Automation
+          - entity: automation.aquarium_daily_reset
+            name: "🌙 Daily Reset"
+            secondary_info: >
+              {% if is_state('automation.aquarium_daily_reset', 'on') %}
+                Scheduled for 2:00 AM daily
+              {% else %}
+                DISABLED - Enable to prevent drift
+              {% endif %}
 
-      # Daily Reset Automation
-      - entity: automation.aquarium_daily_reset
-        name: "🌙 Daily Reset"
-        secondary_info: >
-          {% if is_state('automation.aquarium_daily_reset', 'on') %}
-            Scheduled for 2:00 AM daily
-          {% else %}
-            DISABLED - Enable to prevent drift
-          {% endif %}
+          # Startup Sync Automation  
+          - entity: automation.aquarium_startup_sync
+            name: "🚀 Startup Sync"
+            secondary_info: >
+              {% if is_state('automation.aquarium_startup_sync', 'on') %}
+                Will sync on next restart
+              {% else %}
+                DISABLED - Enable for restart recovery
+              {% endif %}
 
-      # Startup Sync Automation  
-      - entity: automation.aquarium_startup_sync
-        name: "🚀 Startup Sync"
-        secondary_info: >
-          {% if is_state('automation.aquarium_startup_sync', 'on') %}
-            Will sync on next restart
-          {% else %}
-            DISABLED - Enable for restart recovery
-          {% endif %}
+          # Forecast Caching Automation
+          - entity: automation.aquarium_forecast_caching
+            name: "📡 Forecast Caching"
+            secondary_info: >
+              {% if is_state('automation.aquarium_forecast_caching', 'on') %}
+                Updates at 4 AM and 4 PM daily
+              {% else %}
+                DISABLED - Enable for weather reliability
+              {% endif %}
 
-      # Forecast Caching Automation
-      - entity: automation.aquarium_forecast_caching
-        name: "📡 Forecast Caching"
-        secondary_info: >
-          {% if is_state('automation.aquarium_forecast_caching', 'on') %}
-            Updates at 4 AM and 4 PM daily
-          {% else %}
-            DISABLED - Enable for weather reliability
-          {% endif %}
+      # Quick Actions Card
+      # Additional manual controls and emergency actions
+      - type: entities
+        title: "🛠️ Quick Actions"
+        show_header_toggle: false
+        entities:
+          # Reset to Zero Action
+          - entity: script.aquarium_reset_to_zero
+            name: "🔄 Reset All to Zero"
+            icon: mdi:restore
+            tap_action:
+              action: call-service
+              service: script.turn_on
+              service_data:
+                entity_id: script.aquarium_reset_to_zero
+            secondary_info: "Emergency reset - sets all channels to 0"
 
-  # Quick Actions Card
-  # Additional manual controls and emergency actions
-  - type: entities
-    title: "🛠️ Quick Actions"
-    show_header_toggle: false
-    entities:
-      # Reset to Zero Action
-      - entity: script.aquarium_reset_to_zero
-        name: "🔄 Reset All to Zero"
-        icon: mdi:restore
-        tap_action:
-          action: call-service
-          service: script.turn_on
-          service_data:
-            entity_id: script.aquarium_reset_to_zero
-        secondary_info: "Emergency reset - sets all channels to 0"
-
-      # Lightning Effect Manual Trigger
-      - entity: script.aquarium_lightning_effect  
-        name: "⚡ Test Lightning Effect"
-        icon: mdi:weather-lightning
-        tap_action:
-          action: call-service
-          service: script.turn_on
-          service_data:
-            entity_id: script.aquarium_lightning_effect
-        secondary_info: "Manually trigger lightning for testing"
+          # Lightning Effect Manual Trigger
+          - entity: script.aquarium_lightning_effect  
+            name: "⚡ Test Lightning Effect"
+            icon: mdi:weather-lightning
+            tap_action:
+              action: call-service
+              service: script.turn_on
+              service_data:
+                entity_id: script.aquarium_lightning_effect
+            secondary_info: "Manually trigger lightning for testing"
 
 # Dashboard Usage Notes:
 # - All cards are responsive and adapt to screen size
