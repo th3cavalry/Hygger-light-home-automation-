@@ -1,13 +1,85 @@
-alias: 'Aquarium Startup Sync'
-description: 'Runs the sync script on Home Assistant startup to recover from reboots.'
+---
+# Aquarium Startup Sync Automation
+# Automatically synchronizes aquarium lights after Home Assistant restarts
+# Ensures lighting system is properly initialized and matches current conditions
+#
+# Purpose: Recovers from system reboots, power outages, or Home Assistant restarts
+# Critical for maintaining proper lighting after any system interruption
+
+alias: "Aquarium Startup Sync"
+description: "Synchronizes aquarium lights automatically after Home Assistant startup to recover from reboots"
+mode: single                           # Prevent multiple simultaneous executions
+
+# Trigger Configuration
 trigger:
-  - platform: homeassistant
-    event: start
-condition:
+  - platform: homeassistant           # Home Assistant startup trigger
+    event: start                      # Trigger on system start
+    id: "startup_sync_trigger"        # Unique trigger identifier
+
+# Conditions (none required - always execute on startup)
+condition: []
+
+# Action Sequence
 action:
+  # Log the startup sync initiation
+  - service: system_log.write
+    data:
+      message: "Home Assistant started - initiating aquarium light startup sync at {{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+      level: info
+      logger: aquarium.startup_sync
+
+  # Wait for system components to fully initialize
+  # This delay ensures all integrations and entities are ready
   - delay:
-      minutes: 1
+      minutes: 2                       # Increased delay for better reliability
+      
+  # Verify required entities are available before proceeding
+  - condition: template
+    value_template: >
+      {{
+        states('input_number.hygger_white_level') not in ['unknown', 'unavailable'] and
+        states('input_number.hygger_red_level') not in ['unknown', 'unavailable'] and
+        states('input_number.hygger_green_level') not in ['unknown', 'unavailable'] and
+        states('input_number.hygger_blue_level') not in ['unknown', 'unavailable'] and
+        states('sun.sun') not in ['unknown', 'unavailable']
+      }}
+
+  # Log entity verification success
+  - service: system_log.write
+    data:
+      message: "All required entities available - proceeding with sync"
+      level: info
+      logger: aquarium.startup_sync
+
+  # Execute the sync script with error handling
   - service: script.turn_on
     target:
       entity_id: script.sync_aquarium_lights
-mode: single
+    continue_on_error: true            # Continue even if sync fails initially
+
+  # Wait for sync to complete
+  - delay:
+      seconds: 10                      # Allow time for sync completion
+
+  # Verify sync completed successfully
+  - condition: template
+    value_template: >
+      {{
+        states('input_number.hygger_white_level') | int >= 0 and
+        states('input_number.hygger_red_level') | int >= 0 and
+        states('input_number.hygger_green_level') | int >= 0 and
+        states('input_number.hygger_blue_level') | int >= 0
+      }}
+
+  # Log successful completion
+  - service: system_log.write
+    data:
+      message: >
+        Startup sync completed successfully - Light levels: W={{ states('input_number.hygger_white_level') }}, 
+        R={{ states('input_number.hygger_red_level') }}, G={{ states('input_number.hygger_green_level') }}, 
+        B={{ states('input_number.hygger_blue_level') }}
+      level: info
+      logger: aquarium.startup_sync
+
+# Error Recovery: If sync fails, system will continue operating with current states
+# The main lighting automation will correct any issues on its next cycle

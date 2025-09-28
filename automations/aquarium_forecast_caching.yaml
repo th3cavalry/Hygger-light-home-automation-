@@ -1,26 +1,129 @@
-alias: 'Aquarium Forecast Caching'
-description: 'Saves the 3-day weather forecast locally twice a day.'
+---
+# Aquarium Forecast Caching Automation
+# Periodically caches weather forecast data for system reliability
+# Provides backup weather data when live API calls fail or are rate-limited
+#
+# Purpose: Ensures continuous weather-based lighting even during API outages
+# Critical for maintaining weather-responsive lighting functionality
+
+alias: "Aquarium Forecast Caching"
+description: "Caches weather forecast data twice daily to ensure reliable weather-based lighting operations"
+mode: single                           # Prevent overlapping cache operations
+
+# Trigger Configuration - Run twice daily for fresh data
 trigger:
-  - platform: time
-    at:
-      - "04:00:00"
-      - "16:00:00"
-condition:
+  - platform: time                     # Morning cache update
+    at: "04:00:00"
+    id: "morning_cache_update"
+    
+  - platform: time                     # Afternoon cache update  
+    at: "16:00:00"
+    id: "afternoon_cache_update"
+
+# Conditions (none required - always execute when triggered)
+condition: []
+
+# Action Sequence
 action:
+  # Log the cache update initiation
+  - service: system_log.write
+    data:
+      message: "Starting forecast cache update ({{ trigger.id }}) at {{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+      level: info
+      logger: aquarium.forecast_cache
+
+  # Attempt to get fresh weather forecast data
   - service: weather.get_forecasts
     target:
-      entity_id: weather.openweathermap # CHANGE TO YOUR WEATHER ENTITY
+      entity_id: weather.openweathermap # UPDATE: Change to your actual weather entity ID
     data:
-      type: daily
-    response_variable: daily_forecast
-    continue_on_error: true
-  - if:
-      - condition: template
-        value_template: "{{ daily_forecast is defined and daily_forecast }}"
-    then:
-      - service: input_text.set_value
-        target:
-          entity_id: input_text.aquarium_forecast_cache
+      type: daily                      # Get daily forecast data
+    response_variable: daily_forecast  # Store response in variable
+    continue_on_error: true            # Continue even if API call fails
+
+  # Additional hourly forecast for more detailed data
+  - service: weather.get_forecasts
+    target:
+      entity_id: weather.openweathermap # UPDATE: Change to your actual weather entity ID
+    data:
+      type: hourly                     # Get hourly forecast data
+    response_variable: hourly_forecast # Store response in variable
+    continue_on_error: true            # Continue even if API call fails
+
+  # Process and cache the forecast data if available
+  - choose:
+      # If both daily and hourly forecasts are available
+      - conditions:
+          - condition: template
+            value_template: "{{ daily_forecast is defined and daily_forecast }}"
+          - condition: template
+            value_template: "{{ hourly_forecast is defined and hourly_forecast }}"
+        sequence:
+          # Create comprehensive cache with both forecast types
+          - service: input_text.set_value
+            target:
+              entity_id: input_text.aquarium_forecast_cache
+            data:
+              value: >
+                {{
+                  {
+                    'daily': daily_forecast,
+                    'hourly': hourly_forecast,
+                    'cached_at': now().isoformat(),
+                    'cache_type': 'full'
+                  } | to_json
+                }}
+          
+          # Log successful full cache
+          - service: system_log.write
+            data:
+              message: "Forecast cache updated successfully with full data (daily + hourly)"
+              level: info
+              logger: aquarium.forecast_cache
+
+      # If only daily forecast is available
+      - conditions:
+          - condition: template
+            value_template: "{{ daily_forecast is defined and daily_forecast }}"
+        sequence:
+          # Cache daily forecast only
+          - service: input_text.set_value
+            target:
+              entity_id: input_text.aquarium_forecast_cache
+            data:
+              value: >
+                {{
+                  {
+                    'daily': daily_forecast,
+                    'cached_at': now().isoformat(),
+                    'cache_type': 'daily_only'
+                  } | to_json
+                }}
+          
+          # Log partial cache success
+          - service: system_log.write
+            data:
+              message: "Forecast cache updated with daily data only (hourly unavailable)"
+              level: warning
+              logger: aquarium.forecast_cache
+
+    # Default action if no forecast data available
+    default:
+      # Log cache update failure
+      - service: system_log.write
         data:
-          value: "{{ daily_forecast | to_json }}"
-mode: single
+          message: "Forecast cache update failed - no data received from weather API"
+          level: error
+          logger: aquarium.forecast_cache
+
+  # Verify cache content and log cache status
+  - service: system_log.write
+    data:
+      message: >
+        Cache status: {{ 'populated' if states('input_text.aquarium_forecast_cache') | length > 10 else 'empty' }} 
+        ({{ states('input_text.aquarium_forecast_cache') | length }} characters)
+      level: info
+      logger: aquarium.forecast_cache
+
+# Error Recovery: System will use existing cached data if update fails
+# The main lighting automation includes fallback logic for missing weather data

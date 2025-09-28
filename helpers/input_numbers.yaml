@@ -1,35 +1,67 @@
-# Number helpers to track the state of each color channel
-# Create these in Settings > Devices & Services > Helpers
+---
+# Hygger Aquarium Light Helper Entities - Number Inputs
+# These number helpers track the virtual state of each color channel
+# They serve as the "memory" for the lighting system, storing current levels
+# 
+# Creation Instructions:
+# 1. Go to Settings > Devices & Services > Helpers
+# 2. Create "Number" helper for each channel below
+# 3. Configure with exact settings shown
+#
+# IMPORTANT: Entity IDs must match exactly for automations to work
+# These helpers are referenced by all scripts and automations
 
 input_number:
+  # White Channel Level Controller
+  # Controls the brightness of the white LED channel (0-10 scale)
+  # Used for primary illumination and daylight simulation
   hygger_white_level:
     name: "Hygger White Level"
-    min: 0
-    max: 10
-    step: 1
-    mode: slider
-    icon: mdi:lightbulb-outline
+    min: 0                           # Minimum value (off)
+    max: 10                          # Maximum value (full brightness)
+    step: 1                          # Increment step size
+    mode: slider                     # Display as slider in UI
+    icon: mdi:lightbulb-outline      # White lightbulb icon
+    unit_of_measurement: "level"     # Unit display
     
+  # Red Channel Level Controller  
+  # Controls the brightness of the red LED channel (0-10 scale)
+  # Used for sunrise/sunset effects and warm lighting
   hygger_red_level:
     name: "Hygger Red Level"
-    min: 0
-    max: 10
-    step: 1
-    mode: slider
-    icon: mdi:lightbulb-outline
+    min: 0                           # Minimum value (off)
+    max: 10                          # Maximum value (full brightness)
+    step: 1                          # Increment step size
+    mode: slider                     # Display as slider in UI
+    icon: mdi:lightbulb-outline      # Red lightbulb icon
+    unit_of_measurement: "level"     # Unit display
     
+  # Green Channel Level Controller
+  # Controls the brightness of the green LED channel (0-10 scale)
+  # Used for natural color balance and plant growth simulation
   hygger_green_level:
     name: "Hygger Green Level"
-    min: 0
-    max: 10
-    step: 1
-    mode: slider
-    icon: mdi:lightbulb-outline
+    min: 0                           # Minimum value (off)
+    max: 10                          # Maximum value (full brightness)
+    step: 1                          # Increment step size
+    mode: slider                     # Display as slider in UI
+    icon: mdi:lightbulb-outline      # Green lightbulb icon
+    unit_of_measurement: "level"     # Unit display
     
+  # Blue Channel Level Controller
+  # Controls the brightness of the blue LED channel (0-10 scale)
+  # Used for deep water effects and cool lighting tones
   hygger_blue_level:
     name: "Hygger Blue Level"
-    min: 0
-    max: 10
-    step: 1
-    mode: slider
-    icon: mdi:lightbulb-outline
+    min: 0                           # Minimum value (off)
+    max: 10                          # Maximum value (full brightness)
+    step: 1                          # Increment step size
+    mode: slider                     # Display as slider in UI
+    icon: mdi:lightbulb-outline      # Blue lightbulb icon
+    unit_of_measurement: "level"     # Unit display
+
+# Notes for Advanced Configuration:
+# - These helpers can be manually adjusted for testing
+# - Values are automatically updated by the lighting automations
+# - Manual changes will be overridden by the next automation cycle
+# - For permanent manual control, disable the main automation first

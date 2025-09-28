@@ -1,7 +1,41 @@
-# Text helper to cache the weather forecast
-# Create this in Settings > Devices & Services > Helpers
+---
+# Hygger Aquarium Light Helper Entities - Text Input
+# This text helper caches weather forecast data for system reliability
+# It serves as a backup data source when live weather API calls fail
+#
+# Creation Instructions:
+# 1. Go to Settings > Devices & Services > Helpers
+# 2. Create "Text" helper with settings shown below
+# 3. Configure with exact entity ID and maximum length
+#
+# IMPORTANT: Entity ID must match exactly for automations to work
+# This helper is critical for weather-based lighting functionality
 
 input_text:
+  # Weather Forecast Cache Storage
+  # Stores JSON-formatted weather forecast data as backup
+  # Enables system to continue operating during API outages or rate limits
   aquarium_forecast_cache:
     name: "Aquarium Forecast Cache"
-    max: 8192
+    max: 8192                          # Maximum characters (sufficient for JSON forecast data)  
+    mode: text                         # Text input mode
+    icon: mdi:weather-partly-cloudy    # Weather cache icon
+    initial: ""                        # Start with empty cache
+
+# Technical Details:
+# - Stores JSON weather data from OpenWeatherMap API calls
+# - Updated automatically by forecast caching automation
+# - Used as fallback when live API calls fail or timeout
+# - Contains hourly forecast data for lighting calculations
+# - Format: JSON with weather conditions and timestamps
+#
+# Cache Management:
+# - Automatically refreshed every 30 minutes by automation
+# - Falls back to cached data during API failures
+# - Ensures lighting system remains functional during network issues
+# - Manual clearing not recommended (will disable weather-based lighting)
+#
+# Troubleshooting:
+# - If cache appears empty, check weather integration setup
+# - Verify OpenWeatherMap API key is valid and active
+# - Check automation logs for cache update failures

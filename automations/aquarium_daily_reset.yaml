@@ -1,11 +1,75 @@
-alias: Aquarium Daily Reset
-description: Runs the reset script late at night to prevent state drift.
+---
+# Aquarium Daily Reset Automation
+# Performs nightly maintenance reset to prevent state drift between virtual and physical light states
+# Runs automatically at 2 AM when system usage is minimal
+#
+# Purpose: Prevents accumulation of small errors that can cause virtual state to drift from physical state
+# This ensures long-term reliability and accuracy of the lighting system
+
+alias: "Aquarium Daily Reset"
+description: "Performs nightly reset of aquarium lights to prevent state drift and ensure system reliability"
+mode: single                           # Prevent multiple simultaneous executions
+
+# Trigger Configuration
 trigger:
-  - platform: time
-    at: "02:00:00"
-condition:
+  - platform: time                     # Time-based trigger
+    at: "02:00:00"                     # 2:00 AM daily execution
+    id: "daily_reset_trigger"          # Unique trigger identifier
+
+# Conditions (none required - always execute when triggered)
+condition: []
+
+# Action Sequence
 action:
+  # Log the start of daily reset process
+  - service: system_log.write
+    data:
+      message: "Starting daily aquarium light reset at {{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+      level: info
+      logger: aquarium.daily_reset
+
+  # Execute the reset script with error handling
   - service: script.turn_on
     target:
       entity_id: script.aquarium_reset_to_zero
-mode: single
+    continue_on_error: true            # Continue even if reset fails
+
+  # Wait for reset to complete before proceeding
+  - delay:
+      seconds: 5                       # Allow time for reset completion
+
+  # Verify reset was successful by checking helper states
+  - condition: template
+    value_template: >
+      {{
+        states('input_number.hygger_white_level') | int == 0 and
+        states('input_number.hygger_red_level') | int == 0 and
+        states('input_number.hygger_green_level') | int == 0 and
+        states('input_number.hygger_blue_level') | int == 0
+      }}
+    
+  # Log successful completion
+  - service: system_log.write
+    data:
+      message: "Daily aquarium light reset completed successfully - all channels at 0"
+      level: info
+      logger: aquarium.daily_reset
+
+  # Optional: Wait a moment then trigger a sync to current time state
+  - delay:
+      seconds: 2
+      
+  - service: script.turn_on
+    target:
+      entity_id: script.sync_aquarium_lights
+    continue_on_error: true
+
+  # Final success log
+  - service: system_log.write
+    data:
+      message: "Daily reset and resync completed at {{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+      level: info
+      logger: aquarium.daily_reset
+
+# Error Handling: If any step fails, automation continues with fallback actions
+# The 'continue_on_error' flags ensure the daily reset doesn't get stuck on single failures
