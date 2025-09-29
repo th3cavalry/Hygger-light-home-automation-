@@ -96,6 +96,11 @@ You need to teach the Broadlink the IR commands from your Hygger remote.
    - Press the corresponding button on your Hygger remote
    - Repeat for all 9 commands
 
+   **Important:** If some commands don't work as expected after learning:
+   - See [REMOTE_TROUBLESHOOTING.md](REMOTE_TROUBLESHOOTING.md) for detailed guidance
+   - Use the diagnostic tool: `python3 diagnose_remote_commands.py`
+   - Import the button mapper script: `scripts/aquarium_button_mapper.yaml`
+
 ## Step 4: Create Helper Entities
 
 Create these helpers in Settings > Devices & Services > Helpers:
@@ -127,6 +132,7 @@ In Settings > Automations & Scenes > Scripts, create these scripts using the YAM
 - `script.aquarium_reset_to_zero`
 - `script.sync_aquarium_lights`
 - `script.aquarium_test_lights` (optional - for testing and troubleshooting)
+- `script.aquarium_button_mapper` (optional - for remote command troubleshooting)
 
 **Important:** Update the entity IDs in each script:
 - Change `remote.rm4_pro_remote` to your actual Broadlink entity ID

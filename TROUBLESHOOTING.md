@@ -90,12 +90,36 @@ If you observe this sequence during sync: White comes on → turns off → Red c
    - Search for and test `Remote: Send command` with your Broadlink entity
    - Use device: `hygger_hg016` and commands like `white_up`, `white_down`
 
+## Remote Command Issues (NEW)
+
+### Problem: Some Remote Commands Don't Work as Expected
+
+**Symptoms:**
+- `red_up` shows no change
+- `red_down` shows teal instead of dimmer red
+- `green_up` shows teal instead of green
+- `blue_down` turns off lights instead of dimming blue
+
+**Solution:**
+1. **Use the diagnostic tool**: Run `python3 diagnose_remote_commands.py`
+2. **Follow the detailed guide**: See [REMOTE_TROUBLESHOOTING.md](REMOTE_TROUBLESHOOTING.md)
+3. **Use the button mapper script**: Import `scripts/aquarium_button_mapper.yaml` to test individual commands
+4. **Re-learn commands systematically**: Delete broken commands and re-learn using buttons that produce the desired effect
+
+**Quick Fix Steps:**
+1. Test each physical button on your remote manually
+2. Note which buttons actually control red, green, and blue
+3. Delete broken commands in Home Assistant
+4. Re-learn commands using the correct physical buttons
+5. Test with the "Aquarium Test Lights" script
+
 ## Other Common Issues
 
 ### Lights Not Responding at All
 - Verify Broadlink RM4 Pro is connected to WiFi
 - Check that all IR commands have been learned properly
 - Test individual commands via Developer Tools > Actions
+- **NEW**: Use the button mapper script to test specific commands
 
 ### Weather Data Not Updating
 - Verify OpenWeatherMap API key is active
