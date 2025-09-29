@@ -30,8 +30,6 @@ sequence:
   - service: automation.trigger
     target:
       entity_id: automation.aquarium_dynamic_circadian_lighting
-    data:
-      skip_conditions: true
 
   # Brief delay to allow automation to complete
   - delay:
