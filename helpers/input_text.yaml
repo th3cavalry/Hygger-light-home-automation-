@@ -18,8 +18,6 @@ input_text:
   aquarium_forecast_cache:
     name: "Aquarium Forecast Cache"
     max: 8192                          # Maximum characters (sufficient for JSON forecast data)  
-    mode: text                         # Text input mode
-    icon: mdi:weather-partly-cloudy    # Weather cache icon
     initial: ""                        # Start with empty cache
 
 # Technical Details:
