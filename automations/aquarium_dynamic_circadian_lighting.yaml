@@ -87,9 +87,9 @@ action:
         {% set calculated = (elevation / 9) | round(0) | int %}
         {% set current_hour = now().hour %}
         {% if current_hour >= 7 and current_hour <= 19 %}
-          {{ [2, calculated, 10] | sort | list[1] }}
+          {{ [[calculated, 2] | max, 10] | min }}
         {% else %}
-          {{ [0, calculated, 10] | sort | list[1] }}
+          {{ [[calculated, 0] | max, 10] | min }}
         {% endif %}
 
   # Step 3: Log current conditions for debugging
