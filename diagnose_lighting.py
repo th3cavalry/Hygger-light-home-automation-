@@ -13,7 +13,9 @@ def calculate_sun_elevation_fallback(hour):
     current_minute = datetime.now().minute
     day_of_year = datetime.now().timetuple().tm_yday
     
-    if hour >= 6 and hour <= 18:
+    # Only calculate during daylight hours - now determined by sunrise/sunset
+    # This fallback is only used when Home Assistant sun integration is unavailable
+    if hour >= 6 and hour <= 18:  # Approximate fallback range
         # Seasonal adjustment: max sun elevation varies from ~28° (winter) to ~75° (summer)
         summer_peak = 75
         winter_peak = 28
@@ -33,6 +35,57 @@ def calculate_sun_elevation_fallback(hour):
     else:
         return 0
 
+def get_sunrise_sunset_times():
+    """Get approximate sunrise/sunset times for the current date."""
+    from datetime import datetime, timedelta
+    import math
+    
+    # Get current date info
+    now = datetime.now()
+    day_of_year = now.timetuple().tm_yday
+    
+    # Calculate sunrise/sunset for latitude 38.28°N (Jeffersonville, Indiana)
+    # This is an approximation when Home Assistant data isn't available
+    latitude = 38.28
+    
+    # Solar declination angle
+    declination = 23.45 * math.sin(math.radians((360 / 365) * (day_of_year - 81)))
+    
+    # Hour angle at sunrise/sunset
+    lat_rad = math.radians(latitude)
+    decl_rad = math.radians(declination)
+    
+    try:
+        hour_angle = math.degrees(math.acos(-math.tan(lat_rad) * math.tan(decl_rad)))
+        
+        # Convert to time (solar noon is around 12:00, adjust for time zone)
+        sunrise_decimal = 12 - (hour_angle / 15) - 0.5  # Adjust for Eastern Time
+        sunset_decimal = 12 + (hour_angle / 15) - 0.5
+        
+        # Convert to hours and minutes
+        sunrise_hour = int(sunrise_decimal)
+        sunrise_min = int((sunrise_decimal - sunrise_hour) * 60)
+        sunset_hour = int(sunset_decimal)
+        sunset_min = int((sunset_decimal - sunset_hour) * 60)
+        
+        return f"{sunrise_hour:02d}:{sunrise_min:02d}", f"{sunset_hour:02d}:{sunset_min:02d}"
+    except:
+        # Fallback for extreme latitudes or calculation errors
+        return "06:30", "18:30"
+
+def is_daylight_hours(hour, minute):
+    """Determine if current time is between sunrise and sunset."""
+    sunrise_str, sunset_str = get_sunrise_sunset_times()
+    
+    # Parse times
+    sunrise_parts = sunrise_str.split(':')
+    sunset_parts = sunset_str.split(':')
+    sunrise_decimal = int(sunrise_parts[0]) + int(sunrise_parts[1]) / 60
+    sunset_decimal = int(sunset_parts[0]) + int(sunset_parts[1]) / 60
+    current_decimal = hour + minute / 60
+    
+    return sunrise_decimal <= current_decimal <= sunset_decimal
+
 def diagnose_current_time():
     """Diagnose lighting calculations for the current time."""
     now = datetime.now()
@@ -42,13 +95,24 @@ def diagnose_current_time():
     print(f"🕰️  Current time: {current_hour:02d}:{current_minute:02d}")
     print("=" * 50)
     
-    # Calculate expected sun elevation
-    sun_elevation = calculate_sun_elevation_fallback(current_hour)
-    print(f"🌅 Expected sun elevation: {sun_elevation}°")
+    # Get sunrise/sunset information
+    sunrise_str, sunset_str = get_sunrise_sunset_times()
+    daylight_hours = is_daylight_hours(current_hour, current_minute)
     
-    # Calculate base brightness (updated to match outdoor light levels)
-    current_hour = now.hour
-    if current_hour >= 6 and current_hour <= 18:
+    print(f"🌅 Today's sunrise: {sunrise_str}")
+    print(f"🌇 Today's sunset: {sunset_str}")
+    print(f"☀️  Daylight hours: {'Yes' if daylight_hours else 'No'}")
+    
+    # Calculate expected sun elevation - only during daylight hours
+    if daylight_hours:
+        sun_elevation = calculate_sun_elevation_fallback(current_hour)
+    else:
+        sun_elevation = 0
+    
+    print(f"📐 Expected sun elevation: {sun_elevation:.1f}°")
+    
+    # Calculate base brightness (updated to use daylight hours instead of fixed time)
+    if daylight_hours:
         # Scale brightness to match natural outdoor illumination levels
         if sun_elevation > 60:
             base_brightness = 10  # High sun - maximum brightness
@@ -62,12 +126,12 @@ def diagnose_current_time():
             base_brightness = int(sun_elevation / 2.5)  # Twilight
         else:
             base_brightness = 0
-        print(f"📊 Base brightness: {base_brightness} (calibrated for outdoor light levels)")
+        print(f"📊 Base brightness: {base_brightness} (seasonal daylight hours)")
     else:
         base_brightness = 0
-        print(f"📊 Base brightness: {base_brightness} (nighttime)")
+        print(f"📊 Base brightness: {base_brightness} (outside daylight hours)")
     
-    # Calculate each channel (updated for outdoor light matching)
+    # Calculate each channel (updated for sunrise/sunset logic)
     
     # White Channel - Primary illumination matching daylight
     if sun_elevation > 10:
@@ -81,7 +145,7 @@ def diagnose_current_time():
     # Red Channel - Warm light for sunrise/sunset
     if sun_elevation < 20 and sun_elevation > 0:
         target_red = min(int(base_brightness * (1 - sun_elevation/20) * 1.5), 10)
-    elif current_hour >= 8 and current_hour <= 16 and base_brightness > 2:
+    elif daylight_hours and base_brightness > 2:
         target_red = int(max(base_brightness * 0.15, 1))
     else:
         target_red = 0
@@ -99,7 +163,7 @@ def diagnose_current_time():
         target_blue = min(int(base_brightness * 0.8), 8)
     elif sun_elevation > 5:
         target_blue = min(int(base_brightness * 0.6), 6)
-    elif current_hour >= 7 and current_hour <= 17 and base_brightness > 0:
+    elif daylight_hours and base_brightness > 0:
         target_blue = int(max(base_brightness * 0.3, 1))
     else:
         target_blue = 0
@@ -116,10 +180,14 @@ def diagnose_current_time():
     
     if total_brightness == 0:
         print("❌ DIAGNOSIS: Lights should be OFF at this time")
-        if current_hour >= 6 and current_hour <= 20:
-            print("⚠️  WARNING: This seems unusual for daytime hours!")
+        if daylight_hours:
+            print("⚠️  WARNING: This seems unusual for daylight hours!")
+        else:
+            print("✅ Normal: Outside of daylight hours (sunset to sunrise)")
     else:
         print("✅ DIAGNOSIS: Lights should be ON at this time")
+        if not daylight_hours:
+            print("⚠️  WARNING: Lights on outside of daylight hours - check logic!")
     
     return total_brightness > 0
 

@@ -5,7 +5,7 @@ This repository contains the complete configuration for a dynamic, weather-aware
 ## Features
 
 * **Stateful Control**: The system tracks the virtual state of each color channel (R, G, B, W), allowing for precise, gradual transitions instead of abrupt scene changes.
-* **Circadian Rhythm**: Automatically adjusts light color temperature and brightness based on the sun's elevation, creating warm light at sunrise/sunset and cool, bright light at midday.
+* **Circadian Rhythm**: Automatically adjusts light color temperature and brightness based on actual sunrise and sunset times from your location, creating warm light at sunrise/sunset and cool, bright light at midday. Follows natural seasonal variations - short winter days (9-10 hours) and long summer days (14-15 hours).
 * **Predictive Weather Mimicry**: Fetches the hourly weather forecast to proactively adjust the lighting for upcoming conditions like clouds, rain, and sun.
 * **Dynamic Thunderstorm Effects**: When a thunderstorm is forecast, the system can trigger a special lightning effect. This feature can be easily enabled or disabled from the dashboard.
 * **Robust Failsafes**:

@@ -123,12 +123,14 @@ views:
         show_header_toggle: false
         state_color: true
         entities:
-          # Sun Position Information
+          # Sun Position Information with Sunrise/Sunset
           - entity: sun.sun
             name: "☀️ Sun Position"
             secondary_info: >
               Elevation: {{ state_attr('sun.sun', 'elevation') | round(1) }}° 
               ({{ states('sun.sun') | title }})
+              Sunrise: {% set sr = state_attr('sun.sun', 'next_rising') %}{{ as_timestamp(sr) | timestamp_custom('%H:%M') if sr else 'N/A' }}
+              Sunset: {% set ss = state_attr('sun.sun', 'next_setting') %}{{ as_timestamp(ss) | timestamp_custom('%H:%M') if ss else 'N/A' }})
 
           # Weather Cache Status
           - entity: input_text.aquarium_forecast_cache

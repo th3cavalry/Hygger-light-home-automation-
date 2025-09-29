@@ -1,14 +1,16 @@
 ---
 # Aquarium Dynamic Circadian Lighting Automation  
 # The main "brain" of the lighting system - runs every minute to adjust lights
-# Combines sun position, weather data, and user preferences for realistic lighting
+# Follows actual sunrise/sunset times and combines with weather data for realistic lighting
 #
 # Features:
-# - Solar elevation-based brightness calculation
+# - Sunrise/sunset-based daylight hours (seasonal variation from 9h winter to 15h summer)
+# - Solar elevation-based brightness calculation during daylight hours
 # - Weather condition modifiers (cloudy, rainy, sunny)
 # - Storm lightning effects (when enabled)
 # - Comprehensive error handling and fallback logic
 # - Detailed logging for debugging and monitoring
+# - Natural seasonal light cycle for plants and animals
 
 alias: "Aquarium Dynamic Circadian Lighting"
 description: "Main lighting controller - adjusts aquarium lights every minute based on sun position and weather conditions"
@@ -62,17 +64,54 @@ action:
           {{ default_condition }}
         {% endif %}
       
-      # Sun elevation for lighting calculations with location-aware fallback
-      # Calibrated for zip code 47124 (Jeffersonville, Indiana: 38.28°N, 85.74°W)
+      # Sunrise and sunset times from Home Assistant sun integration
+      sunrise_time: >
+        {% set sunrise_attr = state_attr('sun.sun', 'next_rising') %}
+        {% if sunrise_attr %}
+          {{ as_timestamp(sunrise_attr) | timestamp_custom('%H:%M') }}
+        {% else %}
+          06:30
+        {% endif %}
+      
+      sunset_time: >
+        {% set sunset_attr = state_attr('sun.sun', 'next_setting') %}
+        {% if sunset_attr %}
+          {{ as_timestamp(sunset_attr) | timestamp_custom('%H:%M') }}
+        {% else %}
+          18:30
+        {% endif %}
+      
+      # Check if current time is between sunrise and sunset
+      is_daylight_hours: >
+        {% set sunrise_attr = state_attr('sun.sun', 'next_rising') %}
+        {% set sunset_attr = state_attr('sun.sun', 'next_setting') %}
+        {% if sunrise_attr and sunset_attr %}
+          {% set now_ts = now().timestamp() %}
+          {% set sunrise_ts = as_timestamp(sunrise_attr) %}
+          {% set sunset_ts = as_timestamp(sunset_attr) %}
+          {# Handle case where sunrise is tomorrow by checking yesterday's sunset #}
+          {% if sunrise_ts > now_ts %}
+            {% set sunrise_ts = sunrise_ts - 86400 %}
+          {% endif %}
+          {% if sunset_ts < now_ts %}
+            {% set sunset_ts = sunset_ts + 86400 %}
+          {% endif %}
+          {{ now_ts >= sunrise_ts and now_ts <= sunset_ts }}
+        {% else %}
+          {{ states('sun.sun') == 'above_horizon' }}
+        {% endif %}
+      
+      # Sun elevation for lighting calculations with sunrise/sunset awareness
       sun_elevation: >
         {% set elevation = state_attr('sun.sun', 'elevation') %}
         {% if elevation is number %}
           {{ elevation | float(0) }}
         {% else %}
-          {% set current_hour = now().hour %}
-          {% set current_minute = now().minute %}
-          {% set day_of_year = now().timetuple().tm_yday %}
-          {% if current_hour >= 6 and current_hour <= 18 %}
+          {# Fallback calculation only if we're in daylight hours #}
+          {% if is_daylight_hours %}
+            {% set current_hour = now().hour %}
+            {% set current_minute = now().minute %}
+            {% set day_of_year = now().timetuple().tm_yday %}
             {# Seasonal adjustment: max sun elevation varies from ~28° (winter) to ~75° (summer) #}
             {% set summer_peak = 75 %}
             {% set winter_peak = 28 %}
@@ -96,10 +135,10 @@ action:
       
       # Base brightness calculation optimized to match outdoor light levels
       # Enhanced for 4x2x2 reptile enclosure with uniform light distribution
+      # Now follows actual sunrise/sunset times for seasonal variation
       base_brightness: >
         {% set elevation = sun_elevation | float(0) %}
-        {% set current_hour = now().hour %}
-        {% if current_hour >= 6 and current_hour <= 18 %}
+        {% if is_daylight_hours %}
           {# Scale brightness to match natural outdoor illumination levels #}
           {# Outdoor light ranges from ~0.1 lux (twilight) to ~100,000 lux (direct sun) #}
           {# Map this to 0-10 scale for LED controller #}
@@ -130,7 +169,9 @@ action:
     data:
       message: >
         Circadian update: Sun={{ sun_elevation }}°, Base={{ base_brightness }}, 
-        Weather={{ weather_condition }}, Time={{ now().strftime('%H:%M') }}
+        Weather={{ weather_condition }}, Time={{ now().strftime('%H:%M') }},
+        Sunrise={{ sunrise_time }}, Sunset={{ sunset_time }}, 
+        Daylight={{ 'Yes' if is_daylight_hours else 'No' }}
       level: debug
       logger: aquarium.circadian
     continue_on_error: true
@@ -179,12 +220,11 @@ action:
           # Red Channel - Warm light for sunrise/sunset, reduced during midday
           # Mimics natural color temperature changes throughout day
           target_red: >
-            {% set current_hour = now().hour %}
             {% if sun_elevation < 20 and sun_elevation > 0 %}
               {# Low sun angle = warm light (sunrise/sunset) #}
               {{ [(base_brightness * (1 - sun_elevation/20) * 1.5) | round(0) | int, 10] | min }}
-            {% elif current_hour >= 8 and current_hour <= 16 and base_brightness > 2 %}
-              {# Midday - minimal red for balanced color temperature #}
+            {% elif is_daylight_hours and base_brightness > 2 %}
+              {# Midday during daylight hours - minimal red for balanced color temperature #}
               {{ [base_brightness * 0.15, 1] | max | round(0) | int }}
             {% else %}
               0
@@ -202,14 +242,13 @@ action:
           # Blue Channel - Peaks during high sun, provides full spectrum lighting
           # Essential for natural circadian rhythm regulation
           target_blue: >
-            {% set current_hour = now().hour %}
             {% if sun_elevation > 20 %}
               {# High sun - strong blue component #}
               {{ [(base_brightness * 0.8) | round(0) | int, 8] | min }}
             {% elif sun_elevation > 5 %}
               {# Moderate sun - balanced blue #}
               {{ [(base_brightness * 0.6) | round(0) | int, 6] | min }}
-            {% elif current_hour >= 7 and current_hour <= 17 and base_brightness > 0 %}
+            {% elif is_daylight_hours and base_brightness > 0 %}
               {# Daylight hours - minimal blue #}
               {{ [base_brightness * 0.3, 1] | max | round(0) | int }}
             {% else %}
