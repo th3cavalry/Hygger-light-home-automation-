@@ -10,12 +10,29 @@ from datetime import datetime
 import math
 
 def calculate_sun_elevation_fallback(hour):
-    """Calculate approximate sun elevation based on time of day."""
+    """Calculate sun elevation for zip code 47124 (Jeffersonville, Indiana: 38.28°N, 85.74°W)"""
+    from datetime import datetime
+    import math
+    
+    current_minute = datetime.now().minute
+    day_of_year = datetime.now().timetuple().tm_yday
+    
     if hour >= 6 and hour <= 18:
-        if hour <= 12:
-            return (hour - 6) * 15
+        # Seasonal adjustment: max sun elevation varies from ~28° (winter) to ~75° (summer)
+        summer_peak = 75
+        winter_peak = 28
+        seasonal_range = summer_peak - winter_peak
+        seasonal_offset = (day_of_year - 80) / 365 * 2 * math.pi
+        seasonal_factor = winter_peak + seasonal_range * (1 + math.sin(seasonal_offset)) / 2
+        
+        # Calculate elevation based on time from solar noon
+        hour_decimal = hour + (current_minute / 60.0)
+        hours_from_noon = abs(hour_decimal - 12)
+        if hours_from_noon <= 6:
+            elevation_factor = 1 - (hours_from_noon / 6) ** 2
+            return seasonal_factor * elevation_factor
         else:
-            return 90 - ((hour - 12) * 15)
+            return 0
     else:
         return 0
 
@@ -25,62 +42,88 @@ def calculate_lighting_for_conditions(hour, weather_condition):
     # Calculate sun elevation
     sun_elevation = calculate_sun_elevation_fallback(hour)
     
-    # Calculate base brightness (updated for plant growth)
+    # Calculate base brightness (updated to match outdoor light levels)
     current_hour = hour
-    if current_hour >= 6 and current_hour <= 20:
-        calculated_base = max(4, min(10, round(sun_elevation / 6)))
-        base_brightness = calculated_base
+    if current_hour >= 6 and current_hour <= 18:
+        # Scale brightness to match natural outdoor illumination levels
+        if sun_elevation > 60:
+            base_brightness = 10  # High sun - maximum brightness
+        elif sun_elevation > 40:
+            base_brightness = int(8 + (sun_elevation - 40) / 10)  # Mid-day sun
+        elif sun_elevation > 20:
+            base_brightness = int(5 + (sun_elevation - 20) / 6.7)  # Morning/afternoon sun
+        elif sun_elevation > 5:
+            base_brightness = int(2 + (sun_elevation - 5) / 5)  # Low sun
+        elif sun_elevation > 0:
+            base_brightness = int(sun_elevation / 2.5)  # Twilight
+        else:
+            base_brightness = 0
     else:
         base_brightness = 0
     
-    # Calculate each channel (updated formulas for plant growth)
+    # Calculate each channel (updated for outdoor light matching)
     
-    # White Channel
-    if sun_elevation > 5:
-        target_white = min(round(base_brightness * (sun_elevation / 90) * 1.5), 10)
-    elif current_hour >= 7 and current_hour <= 19:
-        target_white = max(base_brightness, 4)
+    # White Channel - Primary illumination matching daylight
+    if sun_elevation > 10:
+        target_white = max(base_brightness, 1)
+    elif sun_elevation > 0:
+        target_white = int(base_brightness * 0.6)
     else:
         target_white = 0
     target_white = max(0, min(10, target_white))
     
-    # Red Channel (now includes daytime red for plants)
-    if sun_elevation < 15:
-        target_red = min(round(base_brightness * (1 - (sun_elevation/15)) * 1.2), 10)
-    elif current_hour >= 8 and current_hour <= 18:
-        target_red = max(round(base_brightness * 0.2), 1)
+    # Red Channel - Warm light for sunrise/sunset
+    if sun_elevation < 20 and sun_elevation > 0:
+        target_red = min(int(base_brightness * (1 - sun_elevation/20) * 1.5), 10)
+    elif current_hour >= 8 and current_hour <= 16 and base_brightness > 2:
+        target_red = int(max(base_brightness * 0.15, 1))
     else:
         target_red = 0
     target_red = max(0, min(10, target_red))
     
-    # Green Channel (enhanced formula)
-    target_green = round(target_white * 0.4 + target_red * 0.3 + base_brightness * 0.3)
+    # Green Channel - Natural balance
+    if base_brightness > 1:
+        target_green = int(target_white * 0.6 + target_red * 0.2 + base_brightness * 0.3)
+    else:
+        target_green = 0
     target_green = max(0, min(10, target_green))
     
-    # Blue Channel (enhanced for plants)
-    if sun_elevation > 5:
-        target_blue = min(round(base_brightness * (sun_elevation / 90) * 1.0), 10)
-    elif current_hour >= 7 and current_hour <= 19:
-        target_blue = max(round(base_brightness * 0.6), 2)
+    # Blue Channel - Peaks during high sun
+    if sun_elevation > 20:
+        target_blue = min(int(base_brightness * 0.8), 8)
+    elif sun_elevation > 5:
+        target_blue = min(int(base_brightness * 0.6), 6)
+    elif current_hour >= 7 and current_hour <= 17 and base_brightness > 0:
+        target_blue = int(max(base_brightness * 0.3, 1))
     else:
         target_blue = 0
     target_blue = max(0, min(10, target_blue))
     
-    # Apply weather modifiers (matching automation logic)
+    # Apply weather modifiers (updated to match outdoor lighting effects)
     modified_white = target_white
     modified_red = target_red
+    modified_green = target_green
     modified_blue = target_blue
     
     if 'cloudy' in weather_condition.lower():
-        modified_white = min(10, (target_white * 0.6 + 2))
-        modified_red = round(target_red * 0.5)
+        # Cloudy reduces light by ~30-50%
+        modified_white = int(target_white * 0.6)
+        modified_red = min(int(target_red * 1.2), 10)  # Overcast enhances warm tones
+        modified_green = int(target_green * 0.8)
+        modified_blue = int(target_blue * 0.9)
     
     if 'rainy' in weather_condition.lower():
-        modified_white = min(10, (target_white * 0.4 + 1))
-        modified_blue = min(10, (target_blue * 0.7 + 2))
+        # Rain/storms reduce light by ~60-70%
+        modified_white = int(target_white * 0.4)
+        modified_red = min(int(target_red * 1.2), 10)  # Overcast enhances warm tones
+        modified_green = int(target_green * 0.6)
+        modified_blue = min(int(target_blue * 1.3), 10)  # Storms have cooler color temperature
     
-    # Recalculate green with weather modifications
-    modified_green = round(modified_white * 0.5 + modified_red * 0.5)
+    if 'partly-cloudy' in weather_condition.lower():
+        # Partial clouds reduce light by ~15-20%
+        modified_white = int(target_white * 0.8)
+        modified_green = int(target_green * 0.9)
+        modified_blue = int(target_blue * 0.95)
     
     # Ensure all values are in valid range
     final_white = max(0, min(10, round(modified_white)))
