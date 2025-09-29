@@ -67,7 +67,7 @@ sequence:
                     device: hygger_hg016
                     command: white_up
                 - delay:
-                    milliseconds: 200
+                    milliseconds: 500
       
       # Decrease white channel
       - conditions: "{{ white_diff < 0 }}"
@@ -82,7 +82,7 @@ sequence:
                     device: hygger_hg016
                     command: white_down
                 - delay:
-                    milliseconds: 200
+                    milliseconds: 500
 
   # Update white level helper
   - service: input_number.set_value
@@ -111,7 +111,7 @@ sequence:
                     device: hygger_hg016
                     command: red_up
                 - delay:
-                    milliseconds: 200
+                    milliseconds: 500
       
       # Decrease red channel
       - conditions: "{{ red_diff < 0 }}"
@@ -126,7 +126,7 @@ sequence:
                     device: hygger_hg016
                     command: red_down
                 - delay:
-                    milliseconds: 200
+                    milliseconds: 500
 
   # Update red level helper
   - service: input_number.set_value
@@ -155,7 +155,7 @@ sequence:
                     device: hygger_hg016
                     command: green_up
                 - delay:
-                    milliseconds: 200
+                    milliseconds: 500
       
       # Decrease green channel
       - conditions: "{{ green_diff < 0 }}"
@@ -170,7 +170,7 @@ sequence:
                     device: hygger_hg016
                     command: green_down
                 - delay:
-                    milliseconds: 200
+                    milliseconds: 500
 
   # Update green level helper
   - service: input_number.set_value
@@ -199,7 +199,7 @@ sequence:
                     device: hygger_hg016
                     command: blue_up
                 - delay:
-                    milliseconds: 200
+                    milliseconds: 500
       
       # Decrease blue channel
       - conditions: "{{ blue_diff < 0 }}"
@@ -214,7 +214,7 @@ sequence:
                     device: hygger_hg016
                     command: blue_down
                 - delay:
-                    milliseconds: 200
+                    milliseconds: 500
 
   # Update blue level helper
   - service: input_number.set_value

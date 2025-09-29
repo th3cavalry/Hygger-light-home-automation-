@@ -37,7 +37,7 @@ sequence:
             device: hygger_hg016
             command: white_up
         - delay:
-            milliseconds: 300
+            milliseconds: 500
         - service: input_number.set_value
           target:
             entity_id: input_number.hygger_white_level
@@ -61,7 +61,7 @@ sequence:
             device: hygger_hg016
             command: white_down
         - delay:
-            milliseconds: 300
+            milliseconds: 500
         - service: input_number.set_value
           target:
             entity_id: input_number.hygger_white_level
@@ -91,7 +91,7 @@ sequence:
             device: hygger_hg016
             command: red_up
         - delay:
-            milliseconds: 300
+            milliseconds: 500
         - service: input_number.set_value
           target:
             entity_id: input_number.hygger_red_level
@@ -115,7 +115,7 @@ sequence:
             device: hygger_hg016
             command: red_down
         - delay:
-            milliseconds: 300
+            milliseconds: 500
         - service: input_number.set_value
           target:
             entity_id: input_number.hygger_red_level
@@ -145,7 +145,7 @@ sequence:
             device: hygger_hg016
             command: green_up
         - delay:
-            milliseconds: 300
+            milliseconds: 500
         - service: input_number.set_value
           target:
             entity_id: input_number.hygger_green_level
@@ -169,7 +169,7 @@ sequence:
             device: hygger_hg016
             command: green_down
         - delay:
-            milliseconds: 300
+            milliseconds: 500
         - service: input_number.set_value
           target:
             entity_id: input_number.hygger_green_level
@@ -199,7 +199,7 @@ sequence:
             device: hygger_hg016
             command: blue_up
         - delay:
-            milliseconds: 300
+            milliseconds: 500
         - service: input_number.set_value
           target:
             entity_id: input_number.hygger_blue_level
@@ -223,7 +223,7 @@ sequence:
             device: hygger_hg016
             command: blue_down
         - delay:
-            milliseconds: 300
+            milliseconds: 500
         - service: input_number.set_value
           target:
             entity_id: input_number.hygger_blue_level
