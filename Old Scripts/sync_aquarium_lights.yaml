@@ -9,7 +9,5 @@ sequence:
   - service: automation.trigger
     target:
       entity_id: automation.aquarium_dynamic_circadian_lighting # Ensure your main automation entity_id matches this
-    data:
-      skip_conditions: true
 mode: single
 icon: mdi:sync

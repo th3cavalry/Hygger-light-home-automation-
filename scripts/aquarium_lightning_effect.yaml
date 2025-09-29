@@ -53,8 +53,6 @@ sequence:
   # - service: automation.trigger
   #   target:
   #     entity_id: automation.aquarium_dynamic_circadian_lighting
-  #   data:
-  #     skip_conditions: true
 
   # Log completion
   - service: system_log.write
