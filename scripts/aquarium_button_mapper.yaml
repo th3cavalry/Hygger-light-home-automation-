@@ -1,0 +1,64 @@
+---
+# Aquarium Button Mapper Script
+# Helps users identify which physical remote buttons correspond to which light functions
+# Run this script to systematically test button mappings
+
+alias: "Aquarium Button Mapper"
+description: "Systematic testing tool to identify actual remote button functions"
+icon: "mdi:remote"
+mode: single
+
+fields:
+  test_command:
+    description: "Command name to test (e.g., red_up, green_down, etc.)"
+    example: "red_up"
+    required: true
+    selector:
+      text:
+  test_description:
+    description: "Description of what you expect this command to do"
+    example: "Should make light more red"
+    required: false
+    selector:
+      text:
+
+sequence:
+  # Log the test attempt
+  - service: system_log.write
+    data:
+      message: "Testing button mapping: {{ test_command }} - {{ test_description | default('No description') }}"
+      level: info
+
+  # Send the test command
+  - service: remote.send_command
+    target:
+      entity_id: remote.rm4_pro_remote  # UPDATE: Change to your actual Broadlink entity ID
+    data:
+      device: hygger_hg016
+      command: "{{ test_command }}"
+
+  # Wait for user to observe the result
+  - delay:
+      seconds: 3
+
+  # Log completion
+  - service: system_log.write
+    data:
+      message: "Button test complete for {{ test_command }}. Check light for actual effect."
+      level: info
+
+  # Optional: Send a notification to remind user to document results
+  - service: persistent_notification.create
+    data:
+      title: "Button Mapping Test Result"
+      message: |
+        Command: {{ test_command }}
+        Expected: {{ test_description | default('Not specified') }}
+        
+        Please document the ACTUAL effect you observed:
+        - Did the light change as expected?
+        - What color/brightness change occurred?
+        - Any unexpected behavior?
+        
+        Use this information to create your button mapping table.
+      notification_id: "button_test_{{ test_command }}"

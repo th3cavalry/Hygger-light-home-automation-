@@ -97,6 +97,7 @@ See the `scripts/` directory for complete YAML configurations:
 - `script.aquarium_reset_to_zero`
 - `script.sync_aquarium_lights`
 - `script.aquarium_test_lights` - Sequential test script for troubleshooting
+- `script.aquarium_button_mapper` - Individual button mapping tool for remote troubleshooting
 
 ### 3. Automations
 
@@ -141,9 +142,12 @@ This will force the light to a known zero state and then immediately ramp it up 
 - `README.md` - This documentation
 - `SETUP_GUIDE.md` - Step-by-step setup instructions
 - `TROUBLESHOOTING.md` - Troubleshooting guide for common issues
+- `REMOTE_TROUBLESHOOTING.md` - Detailed guide for IR remote command issues
 - `validate_config.py` - Configuration validation script
 - `check_entities.py` - Entity ID configuration checker
 - `test_lights.py` - Python script to simulate the light test sequence
+- `diagnose_lighting.py` - Diagnostic tool for lighting timing issues
+- `diagnose_remote_commands.py` - Diagnostic tool for IR remote command issues
 - `scripts/` - Home Assistant script configurations
 - `automations/` - Home Assistant automation configurations
 - `dashboard/` - Dashboard YAML configuration
@@ -172,6 +176,12 @@ The system includes a comprehensive test script that cycles through each color c
 - Shows expected light levels for current time
 - Checks common configuration issues
 - Provides step-by-step troubleshooting guidance
+
+**Remote Command Diagnostic Tool**: `python3 diagnose_remote_commands.py`
+- Helps troubleshoot IR command mapping issues
+- Provides step-by-step re-learning instructions
+- Analyzes common Hygger HG016 remote problems
+- Guides users through systematic button testing
 
 ### Configuration Validation
 
