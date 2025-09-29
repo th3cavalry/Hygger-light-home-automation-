@@ -81,6 +81,28 @@ If lights reset to zero but don't adjust to proper brightness/color afterward:
 - Check that the daily reset automation is enabled
 - Verify helper entities are updating correctly
 
+## Brightness and Plant Growth Optimization
+
+### Enhanced Lighting for Aquarium Plants
+The system has been optimized for plant growth with significantly higher brightness levels:
+
+**Improved Brightness Characteristics:**
+- **Base Brightness**: Now uses `/6` calculation instead of `/9` for brighter output
+- **Daytime Minimum**: Increased from 2 to 4 for better plant photosynthesis  
+- **Extended Hours**: Active from 6:00-20:00 instead of 7:00-19:00
+- **Plant-Friendly Colors**: Red and blue maintained throughout day at low levels
+
+**Expected Brightness at Key Times:**
+- **10:00 AM (Bright Day)**: White:10, Red:2, Green:6, Blue:7 (Total: 25/40)
+- **Noon (Peak)**: White:10, Red:2, Green:6, Blue:10 (Total: 28/40)  
+- **Evening**: Maintains warmer colors while supporting plant needs
+
+**Validation**: Use the updated diagnostic tools to confirm brightness levels:
+```bash
+python3 diagnose_lighting.py          # Current time analysis
+python3 test_weather_conditions.py    # 24-hour progression validation
+```
+
 ### HG016 Hardware Timing Requirements
 **Important**: The Hygger HG016 light requires **500ms delays** between IR commands for reliable operation.
 

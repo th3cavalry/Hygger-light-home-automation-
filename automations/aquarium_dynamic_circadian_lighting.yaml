@@ -80,16 +80,16 @@ action:
           {% endif %}
         {% endif %}
       
-      # Base brightness calculation based on sun elevation
-      # Enhanced formula with minimum daytime brightness to ensure lights turn on
+      # Base brightness calculation optimized for plant growth
+      # Higher brightness levels throughout the day for healthy plant development
       base_brightness: >
         {% set elevation = sun_elevation | float(0) %}
-        {% set calculated = (elevation / 9) | round(0) | int %}
         {% set current_hour = now().hour %}
-        {% if current_hour >= 7 and current_hour <= 19 %}
-          {{ [[calculated, 2] | max, 10] | min }}
+        {% if current_hour >= 6 and current_hour <= 20 %}
+          {% set calculated = (elevation / 6) | round(0) | int %}
+          {{ [[calculated, 4] | max, 10] | min }}
         {% else %}
-          {{ [[calculated, 0] | max, 10] | min }}
+          0
         {% endif %}
 
   # Step 3: Log current conditions for debugging
@@ -129,39 +129,42 @@ action:
     default:
       # Step 5: Calculate target light levels based on sun elevation
       - variables:
-          # White Channel Calculation - Enhanced for better daytime coverage
-          # Ensure white light is active during all daylight hours
+          # White Channel Calculation - Optimized for plant growth
+          # Higher brightness during daylight hours for photosynthesis
           target_white: >
             {% set current_hour = now().hour %}
-            {% if sun_elevation > 10 %}
-              {{ [(base_brightness * (sun_elevation / 90) * 1.2) | round(0) | int, 10] | min }}
+            {% if sun_elevation > 5 %}
+              {{ [(base_brightness * (sun_elevation / 90) * 1.5) | round(0) | int, 10] | min }}
             {% elif current_hour >= 7 and current_hour <= 19 %}
-              {{ [base_brightness | int, 2] | max }}
-            {% else %}
-              {{ (base_brightness * 0.5) | round(0) | int }}
-            {% endif %}
-          
-          # Red Channel Calculation - Warm sunrise/sunset effects
-          # Strongest at low sun elevations, fades during midday
-          target_red: >
-            {% if sun_elevation < 15 %}
-              {{ [(base_brightness * (1 - (sun_elevation/15)) * 1.5) | round(0) | int, 10] | min }}
+              {{ [base_brightness | int, 4] | max }}
             {% else %}
               0
             {% endif %}
           
-          # Green Channel Calculation - Natural balance
-          # Blend of white and red for natural color temperature
-          target_green: "{{ (target_white * 0.5 + target_red * 0.5) | round(0) | int }}"
+          # Red Channel Calculation - Enhanced for plant growth
+          # Maintains red light during day for healthy plant development
+          target_red: >
+            {% set current_hour = now().hour %}
+            {% if sun_elevation < 15 %}
+              {{ [(base_brightness * (1 - (sun_elevation/15)) * 1.2) | round(0) | int, 10] | min }}
+            {% elif current_hour >= 8 and current_hour <= 18 %}
+              {{ [base_brightness * 0.2, 1] | max | round(0) | int }}
+            {% else %}
+              0
+            {% endif %}
           
-          # Blue Channel Calculation - Enhanced for better daytime coverage
-          # Moderate strength during daylight hours
+          # Green Channel Calculation - Enhanced balance for plant growth
+          # Optimized blend for natural color temperature and plant health
+          target_green: "{{ (target_white * 0.4 + target_red * 0.3 + base_brightness * 0.3) | round(0) | int }}"
+          
+          # Blue Channel Calculation - Enhanced for plant growth
+          # Higher blue levels throughout day for optimal photosynthesis
           target_blue: >
             {% set current_hour = now().hour %}
             {% if sun_elevation > 5 %}
-              {{ [(base_brightness * (sun_elevation / 90) * 0.8) | round(0) | int, 8] | min }}
-            {% elif current_hour >= 8 and current_hour <= 18 %}
-              {{ [base_brightness * 0.4, 1] | max | round(0) | int }}
+              {{ [(base_brightness * (sun_elevation / 90) * 1.0) | round(0) | int, 10] | min }}
+            {% elif current_hour >= 7 and current_hour <= 19 %}
+              {{ [base_brightness * 0.6, 2] | max | round(0) | int }}
             {% else %}
               0
             {% endif %}

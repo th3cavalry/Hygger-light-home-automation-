@@ -29,41 +29,44 @@ def diagnose_current_time():
     sun_elevation = calculate_sun_elevation_fallback(current_hour)
     print(f"🌅 Expected sun elevation: {sun_elevation}°")
     
-    # Calculate base brightness
-    calculated_base = max(0, min(10, round(sun_elevation / 9)))
-    if current_hour >= 7 and current_hour <= 19:
-        base_brightness = max(2, calculated_base)
-        print(f"📊 Base brightness: {base_brightness} (with daytime minimum of 2)")
-    else:
+    # Calculate base brightness (updated for plant growth)
+    current_hour = now.hour
+    if current_hour >= 6 and current_hour <= 20:
+        calculated_base = max(4, min(10, round(sun_elevation / 6)))
         base_brightness = calculated_base
-        print(f"📊 Base brightness: {base_brightness} (no daytime minimum)")
-    
-    # Calculate each channel
-    # White Channel
-    if sun_elevation > 10:
-        target_white = min(round(base_brightness * (sun_elevation / 90) * 1.2), 10)
-    elif current_hour >= 7 and current_hour <= 19:
-        target_white = max(base_brightness, 2)
+        print(f"📊 Base brightness: {base_brightness} (optimized for plant growth)")
     else:
-        target_white = round(base_brightness * 0.5)
+        base_brightness = 0
+        print(f"📊 Base brightness: {base_brightness} (nighttime)")
+    
+    # Calculate each channel (updated formulas)
+    # White Channel
+    if sun_elevation > 5:
+        target_white = min(round(base_brightness * (sun_elevation / 90) * 1.5), 10)
+    elif current_hour >= 7 and current_hour <= 19:
+        target_white = max(base_brightness, 4)
+    else:
+        target_white = 0
     target_white = max(0, min(10, target_white))
     
-    # Red Channel
+    # Red Channel (now includes daytime red for plants)
     if sun_elevation < 15:
-        target_red = min(round(base_brightness * (1 - (sun_elevation/15)) * 1.5), 10)
+        target_red = min(round(base_brightness * (1 - (sun_elevation/15)) * 1.2), 10)
+    elif current_hour >= 8 and current_hour <= 18:
+        target_red = max(round(base_brightness * 0.2), 1)
     else:
         target_red = 0
     target_red = max(0, min(10, target_red))
     
-    # Green Channel
-    target_green = round(target_white * 0.5 + target_red * 0.5)
+    # Green Channel (enhanced formula)
+    target_green = round(target_white * 0.4 + target_red * 0.3 + base_brightness * 0.3)
     target_green = max(0, min(10, target_green))
     
-    # Blue Channel
+    # Blue Channel (enhanced for plants)
     if sun_elevation > 5:
-        target_blue = min(round(base_brightness * (sun_elevation / 90) * 0.8), 8)
-    elif current_hour >= 8 and current_hour <= 18:
-        target_blue = max(round(base_brightness * 0.4), 1)
+        target_blue = min(round(base_brightness * (sun_elevation / 90) * 1.0), 10)
+    elif current_hour >= 7 and current_hour <= 19:
+        target_blue = max(round(base_brightness * 0.6), 2)
     else:
         target_blue = 0
     target_blue = max(0, min(10, target_blue))
