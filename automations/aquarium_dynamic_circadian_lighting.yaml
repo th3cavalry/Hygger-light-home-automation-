@@ -62,32 +62,76 @@ action:
           {{ default_condition }}
         {% endif %}
       
-      # Sun elevation for lighting calculations with fallback
+      # Sun elevation for lighting calculations with location-aware fallback
+      # Optimized for zip code 47124 (Jeffersonville, Indiana: 38.28°N, 85.74°W)
       sun_elevation: >
         {% set elevation = state_attr('sun.sun', 'elevation') %}
         {% if elevation is number %}
           {{ elevation | float(0) }}
         {% else %}
           {% set current_hour = now().hour %}
+          {% set current_minute = now().minute %}
+          {% set day_of_year = now().timetuple().tm_yday %}
+      # Sun elevation for lighting calculations with location-aware fallback
+      # Calibrated for zip code 47124 (Jeffersonville, Indiana: 38.28°N, 85.74°W)
+      sun_elevation: >
+        {% set elevation = state_attr('sun.sun', 'elevation') %}
+        {% if elevation is number %}
+          {{ elevation | float(0) }}
+        {% else %}
+          {% set current_hour = now().hour %}
+          {% set current_minute = now().minute %}
+          {% set day_of_year = now().timetuple().tm_yday %}
           {% if current_hour >= 6 and current_hour <= 18 %}
-            {% if current_hour <= 12 %}
-              {{ (current_hour - 6) * 15 }}
+            {# Seasonal adjustment: max sun elevation varies from ~28° (winter) to ~75° (summer) #}
+            {% set summer_peak = 75 %}
+            {% set winter_peak = 28 %}
+            {% set seasonal_range = summer_peak - winter_peak %}
+            {% set seasonal_offset = (day_of_year - 80) / 365 * 6.28 %}
+            {% set seasonal_factor = winter_peak + seasonal_range * (1 + (seasonal_offset | sin)) / 2 %}
+            
+            {# Calculate elevation based on time from solar noon #}
+            {% set hour_decimal = current_hour + (current_minute / 60.0) %}
+            {% set hours_from_noon = (hour_decimal - 12) | abs %}
+            {% if hours_from_noon <= 6 %}
+              {% set elevation_factor = (1 - (hours_from_noon / 6) ** 2) %}
+              {{ (seasonal_factor * elevation_factor) | round(1) }}
             {% else %}
-              {{ 90 - ((current_hour - 12) * 15) }}
+              0
             {% endif %}
           {% else %}
             0
           {% endif %}
         {% endif %}
+        {% endif %}
       
-      # Base brightness calculation optimized for plant growth
-      # Higher brightness levels throughout the day for healthy plant development
+      # Base brightness calculation optimized to match outdoor light levels
+      # Enhanced for 4x2x2 reptile enclosure with uniform light distribution
       base_brightness: >
         {% set elevation = sun_elevation | float(0) %}
         {% set current_hour = now().hour %}
-        {% if current_hour >= 6 and current_hour <= 20 %}
-          {% set calculated = (elevation / 6) | round(0) | int %}
-          {{ [[calculated, 4] | max, 10] | min }}
+        {% if current_hour >= 6 and current_hour <= 18 %}
+          {# Scale brightness to match natural outdoor illumination levels #}
+          {# Outdoor light ranges from ~0.1 lux (twilight) to ~100,000 lux (direct sun) #}
+          {# Map this to 0-10 scale for LED controller #}
+          {% if elevation > 60 %}
+            {# High sun - maximum brightness #}
+            10
+          {% elif elevation > 40 %}
+            {# Mid-day sun - high brightness #}
+            {{ (8 + (elevation - 40) / 10) | round(0) | int }}
+          {% elif elevation > 20 %}
+            {# Morning/afternoon sun - moderate brightness #}
+            {{ (5 + (elevation - 20) / 6.7) | round(0) | int }}
+          {% elif elevation > 5 %}
+            {# Low sun - dim but visible #}
+            {{ (2 + (elevation - 5) / 5) | round(0) | int }}
+          {% elif elevation > 0 %}
+            {# Twilight - very dim #}
+            {{ (elevation / 2.5) | round(0) | int }}
+          {% else %}
+            0
+          {% endif %}
         {% else %}
           0
         {% endif %}
@@ -129,77 +173,110 @@ action:
     default:
       # Step 5: Calculate target light levels based on sun elevation
       - variables:
-          # White Channel Calculation - Optimized for plant growth
-          # Higher brightness during daylight hours for photosynthesis
+          # White Channel - Primary illumination matching daylight
+          # Scaled to provide uniform brightness in 4x2x2 enclosure
           target_white: >
             {% set current_hour = now().hour %}
-            {% if sun_elevation > 5 %}
-              {{ [(base_brightness * (sun_elevation / 90) * 1.5) | round(0) | int, 10] | min }}
-            {% elif current_hour >= 7 and current_hour <= 19 %}
-              {{ [base_brightness | int, 4] | max }}
+            {% if sun_elevation > 10 %}
+              {# Daylight hours - white provides primary illumination #}
+              {{ [base_brightness | int, 1] | max }}
+            {% elif sun_elevation > 0 %}
+              {# Twilight - reduced white for natural color temperature #}
+              {{ (base_brightness * 0.6) | round(0) | int }}
             {% else %}
               0
             {% endif %}
           
-          # Red Channel Calculation - Enhanced for plant growth
-          # Maintains red light during day for healthy plant development
+          # Red Channel - Warm light for sunrise/sunset, reduced during midday
+          # Mimics natural color temperature changes throughout day
           target_red: >
             {% set current_hour = now().hour %}
-            {% if sun_elevation < 15 %}
-              {{ [(base_brightness * (1 - (sun_elevation/15)) * 1.2) | round(0) | int, 10] | min }}
-            {% elif current_hour >= 8 and current_hour <= 18 %}
-              {{ [base_brightness * 0.2, 1] | max | round(0) | int }}
+            {% if sun_elevation < 20 and sun_elevation > 0 %}
+              {# Low sun angle = warm light (sunrise/sunset) #}
+              {{ [(base_brightness * (1 - sun_elevation/20) * 1.5) | round(0) | int, 10] | min }}
+            {% elif current_hour >= 8 and current_hour <= 16 and base_brightness > 2 %}
+              {# Midday - minimal red for balanced color temperature #}
+              {{ [base_brightness * 0.15, 1] | max | round(0) | int }}
             {% else %}
               0
             {% endif %}
           
-          # Green Channel Calculation - Enhanced balance for plant growth
-          # Optimized blend for natural color temperature and plant health
-          target_green: "{{ (target_white * 0.4 + target_red * 0.3 + base_brightness * 0.3) | round(0) | int }}"
+          # Green Channel - Natural balance, enhanced during active daylight hours
+          # Provides natural spectrum balance for reptile health
+          target_green: >
+            {% if base_brightness > 1 %}
+              {{ (target_white * 0.6 + target_red * 0.2 + base_brightness * 0.3) | round(0) | int }}
+            {% else %}
+              0
+            {% endif %}
           
-          # Blue Channel Calculation - Enhanced for plant growth
-          # Higher blue levels throughout day for optimal photosynthesis
+          # Blue Channel - Peaks during high sun, provides full spectrum lighting
+          # Essential for natural circadian rhythm regulation
           target_blue: >
             {% set current_hour = now().hour %}
-            {% if sun_elevation > 5 %}
-              {{ [(base_brightness * (sun_elevation / 90) * 1.0) | round(0) | int, 10] | min }}
-            {% elif current_hour >= 7 and current_hour <= 19 %}
-              {{ [base_brightness * 0.6, 2] | max | round(0) | int }}
+            {% if sun_elevation > 20 %}
+              {# High sun - strong blue component #}
+              {{ [(base_brightness * 0.8) | round(0) | int, 8] | min }}
+            {% elif sun_elevation > 5 %}
+              {# Moderate sun - balanced blue #}
+              {{ [(base_brightness * 0.6) | round(0) | int, 6] | min }}
+            {% elif current_hour >= 7 and current_hour <= 17 and base_brightness > 0 %}
+              {# Daylight hours - minimal blue #}
+              {{ [base_brightness * 0.3, 1] | max | round(0) | int }}
             {% else %}
               0
             {% endif %}
 
-      # Step 6: Apply weather condition modifiers
+      # Step 6: Apply weather condition modifiers to match real outdoor lighting
       - variables:
-          # Weather-Modified White Channel
+          # Weather-Modified White Channel - Primary brightness adjustment
           modified_white: >
             {% set w = target_white %}
             {% if 'cloudy' in weather_condition %}
-              {% set w = ([10, (w * 0.6 + 2)] | min) %}
+              {# Cloudy reduces light by ~30-50% #}
+              {% set w = (w * 0.6) | round(0) | int %}
+            {% elif 'rainy' in weather_condition %}
+              {# Rain/storms reduce light by ~60-70% #}
+              {% set w = (w * 0.4) | round(0) | int %}
+            {% elif 'partly-cloudy' in weather_condition %}
+              {# Partial clouds reduce light by ~15-20% #}
+              {% set w = (w * 0.8) | round(0) | int %}
             {% endif %}
-            {% if 'rainy' in weather_condition %}
-              {% set w = ([10, (w * 0.4 + 1)] | min) %}
-            {% endif %}
-            {{ w | round(0) | int }}
+            {{ [w, 0] | max }}
           
-          # Weather-Modified Red Channel
+          # Weather-Modified Red Channel - Warm light enhancement in overcast
           modified_red: >
-            {% if 'cloudy' in weather_condition %}
-              {{ (target_red * 0.5) | round(0) | int }}
-            {% else %}
-              {{ target_red }}
+            {% set r = target_red %}
+            {% if 'cloudy' in weather_condition or 'rainy' in weather_condition %}
+              {# Overcast enhances warm tones #}
+              {% set r = (r * 1.2) | round(0) | int %}
             {% endif %}
+            {{ [r, 10] | min }}
           
-          # Weather-Modified Green Channel (recalculated with modified values)
-          modified_green: "{{ (modified_white * 0.5 + modified_red * 0.5) | round(0) | int }}"
+          # Weather-Modified Green Channel - Balanced adjustment
+          modified_green: >
+            {% set g = target_green %}
+            {% if 'cloudy' in weather_condition %}
+              {% set g = (g * 0.8) | round(0) | int %}
+            {% elif 'rainy' in weather_condition %}
+              {% set g = (g * 0.6) | round(0) | int %}
+            {% elif 'partly-cloudy' in weather_condition %}
+              {% set g = (g * 0.9) | round(0) | int %}
+            {% endif %}
+            {{ [g, 0] | max }}
           
-          # Weather-Modified Blue Channel
+          # Weather-Modified Blue Channel - Storm enhancement
           modified_blue: >
             {% set b = target_blue %}
             {% if 'rainy' in weather_condition %}
-              {% set b = ([10, (b * 0.7 + 2)] | min) %}
+              {# Storms have cooler color temperature #}
+              {% set b = (b * 1.3) | round(0) | int %}
+            {% elif 'cloudy' in weather_condition %}
+              {% set b = (b * 0.9) | round(0) | int %}
+            {% elif 'partly-cloudy' in weather_condition %}
+              {% set b = (b * 0.95) | round(0) | int %}
             {% endif %}
-            {{ b | round(0) | int }}
+            {{ [b, 10] | min }}
 
       # Step 7: Ensure all values are within valid range (0-10) and log calculations
       - variables:
