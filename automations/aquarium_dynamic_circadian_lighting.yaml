@@ -63,16 +63,6 @@ action:
         {% endif %}
       
       # Sun elevation for lighting calculations with location-aware fallback
-      # Optimized for zip code 47124 (Jeffersonville, Indiana: 38.28°N, 85.74°W)
-      sun_elevation: >
-        {% set elevation = state_attr('sun.sun', 'elevation') %}
-        {% if elevation is number %}
-          {{ elevation | float(0) }}
-        {% else %}
-          {% set current_hour = now().hour %}
-          {% set current_minute = now().minute %}
-          {% set day_of_year = now().timetuple().tm_yday %}
-      # Sun elevation for lighting calculations with location-aware fallback
       # Calibrated for zip code 47124 (Jeffersonville, Indiana: 38.28°N, 85.74°W)
       sun_elevation: >
         {% set elevation = state_attr('sun.sun', 'elevation') %}
@@ -102,7 +92,6 @@ action:
           {% else %}
             0
           {% endif %}
-        {% endif %}
         {% endif %}
       
       # Base brightness calculation optimized to match outdoor light levels
