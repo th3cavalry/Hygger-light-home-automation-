@@ -20,8 +20,16 @@ trigger:
     minutes: "/1"                      # Every minute (creates smooth lighting transitions)
     id: "circadian_update"             # Unique trigger identifier
 
-# Conditions (none required - always execute when triggered)
-condition: []
+# Conditions - Ensure required entities are available before running
+condition:
+  - condition: template
+    value_template: >
+      {{
+        states('input_number.hygger_white_level') not in ['unknown', 'unavailable'] and
+        states('input_number.hygger_red_level') not in ['unknown', 'unavailable'] and
+        states('input_number.hygger_green_level') not in ['unknown', 'unavailable'] and
+        states('input_number.hygger_blue_level') not in ['unknown', 'unavailable']
+      }}
 
 # Action Sequence - Complex lighting calculation and adjustment logic
 action:
@@ -34,34 +42,55 @@ action:
     response_variable: hourly_forecast # Store API response
     continue_on_error: true            # Don't fail if API is down
 
-  # Step 2: Determine weather conditions with fallback logic
+  # Step 2: Determine weather conditions with robust fallback logic
   - variables:
-      # Primary weather condition determination with multiple fallback layers
+      # Simplified and more robust weather condition determination
+      # Always defaults to 'sunny' to ensure lights work even without weather data
       weather_condition: >
-        {% if hourly_forecast is defined and hourly_forecast %}
-          {# Use fresh API data if available #}
-          {{ hourly_forecast['weather.openweathermap'].forecast[0].condition }}
-        {% elif states('input_text.aquarium_forecast_cache') | length > 10 %}
-          {# Fall back to cached weather data #}
-          {% set cached_data = states('input_text.aquarium_forecast_cache') | from_json %}
-          {% if cached_data.hourly is defined %}
-            {{ cached_data.hourly['weather.openweathermap'].forecast[0].condition }}
-          {% elif cached_data.daily is defined %}
-            {{ cached_data.daily['weather.openweathermap'].forecast[0].condition }}
+        {% set default_condition = 'sunny' %}
+        {% if hourly_forecast is defined and hourly_forecast is mapping and hourly_forecast | length > 0 %}
+          {% set first_key = hourly_forecast.keys() | list | first %}
+          {% if hourly_forecast[first_key] is defined and hourly_forecast[first_key].get('forecast', []) | length > 0 %}
+            {{ hourly_forecast[first_key].forecast[0].get('condition', default_condition) }}
           {% else %}
-            sunny
+            {{ default_condition }}
           {% endif %}
+        {% elif states('input_text.aquarium_forecast_cache') not in ['unknown', 'unavailable', ''] and states('input_text.aquarium_forecast_cache') | length > 5 %}
+          {% set cached = states('input_text.aquarium_forecast_cache') | from_json(default={'condition': default_condition}) %}
+          {{ cached.get('condition', default_condition) }}
         {% else %}
-          {# Ultimate fallback - assume sunny conditions #}
-          sunny
+          {{ default_condition }}
         {% endif %}
       
-      # Sun elevation for lighting calculations
-      sun_elevation: "{{ state_attr('sun.sun', 'elevation') | float(0) }}"
+      # Sun elevation for lighting calculations with fallback
+      sun_elevation: >
+        {% set elevation = state_attr('sun.sun', 'elevation') %}
+        {% if elevation is number %}
+          {{ elevation | float(0) }}
+        {% else %}
+          {% set current_hour = now().hour %}
+          {% if current_hour >= 6 and current_hour <= 18 %}
+            {% if current_hour <= 12 %}
+              {{ (current_hour - 6) * 15 }}
+            {% else %}
+              {{ 90 - ((current_hour - 12) * 15) }}
+            {% endif %}
+          {% else %}
+            0
+          {% endif %}
+        {% endif %}
       
       # Base brightness calculation based on sun elevation
-      # Formula: elevation ÷ 9 with minimum of 0 and maximum of 10
-      base_brightness: "{{ [0, (sun_elevation / 9) | round(0) | int, 10] | sort | list[1] }}"
+      # Enhanced formula with minimum daytime brightness to ensure lights turn on
+      base_brightness: >
+        {% set elevation = sun_elevation | float(0) %}
+        {% set calculated = (elevation / 9) | round(0) | int %}
+        {% set current_hour = now().hour %}
+        {% if current_hour >= 7 and current_hour <= 19 %}
+          {{ [2, calculated, 10] | sort | list[1] }}
+        {% else %}
+          {{ [0, calculated, 10] | sort | list[1] }}
+        {% endif %}
 
   # Step 3: Log current conditions for debugging
   - service: system_log.write
@@ -71,6 +100,7 @@ action:
         Weather={{ weather_condition }}, Time={{ now().strftime('%H:%M') }}
       level: debug
       logger: aquarium.circadian
+    continue_on_error: true
 
   # Step 4: Check for lightning conditions and handle special effects
   - choose:
@@ -99,11 +129,14 @@ action:
     default:
       # Step 5: Calculate target light levels based on sun elevation
       - variables:
-          # White Channel Calculation - Primary illumination
-          # Stronger during high sun elevation, dimmer at low angles
+          # White Channel Calculation - Enhanced for better daytime coverage
+          # Ensure white light is active during all daylight hours
           target_white: >
+            {% set current_hour = now().hour %}
             {% if sun_elevation > 10 %}
-              {{ (base_brightness * (sun_elevation / 90) * 1.2) | round(0) | int }}
+              {{ [(base_brightness * (sun_elevation / 90) * 1.2) | round(0) | int, 10] | min }}
+            {% elif current_hour >= 7 and current_hour <= 19 %}
+              {{ [base_brightness | int, 2] | max }}
             {% else %}
               {{ (base_brightness * 0.5) | round(0) | int }}
             {% endif %}
@@ -112,7 +145,7 @@ action:
           # Strongest at low sun elevations, fades during midday
           target_red: >
             {% if sun_elevation < 15 %}
-              {{ (base_brightness * (1 - (sun_elevation/15)) * 1.5) | round(0) | int }}
+              {{ [(base_brightness * (1 - (sun_elevation/15)) * 1.5) | round(0) | int, 10] | min }}
             {% else %}
               0
             {% endif %}
@@ -121,11 +154,14 @@ action:
           # Blend of white and red for natural color temperature
           target_green: "{{ (target_white * 0.5 + target_red * 0.5) | round(0) | int }}"
           
-          # Blue Channel Calculation - Cool water effects
+          # Blue Channel Calculation - Enhanced for better daytime coverage
           # Moderate strength during daylight hours
           target_blue: >
+            {% set current_hour = now().hour %}
             {% if sun_elevation > 5 %}
-              {{ (base_brightness * (sun_elevation / 90) * 0.8) | round(0) | int }}
+              {{ [(base_brightness * (sun_elevation / 90) * 0.8) | round(0) | int, 8] | min }}
+            {% elif current_hour >= 8 and current_hour <= 18 %}
+              {{ [base_brightness * 0.4, 1] | max | round(0) | int }}
             {% else %}
               0
             {% endif %}
@@ -177,6 +213,7 @@ action:
             G={{ final_green }}, B={{ final_blue }}
           level: debug
           logger: aquarium.circadian
+        continue_on_error: true
 
       # Step 9: Execute state reconciliation with calculated targets
       - service: script.aquarium_reconcile_state
