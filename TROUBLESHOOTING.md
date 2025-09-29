@@ -81,6 +81,60 @@ If lights reset to zero but don't adjust to proper brightness/color afterward:
 - Check that the daily reset automation is enabled
 - Verify helper entities are updating correctly
 
+### HG016 Hardware Timing Requirements
+**Important**: The Hygger HG016 light requires **500ms delays** between IR commands for reliable operation.
+
+**Symptoms of incorrect timing**:
+- Lights not responding to some commands
+- Commands being missed or ignored
+- Inconsistent brightness changes
+
+**Solution**: The system now uses 500ms delays in all scripts:
+- `aquarium_reconcile_state.yaml`: 500ms between each IR command
+- `aquarium_test_lights.yaml`: 500ms between each test command
+- `test_lights.py`: 0.5 second delays in simulation
+
+**Testing**: Use the provided test scripts to validate timing:
+```bash
+# Test weather conditions and timing
+python3 test_weather_conditions.py
+
+# Test lighting scenarios with proper delays
+python3 simulate_lighting_scenarios.py
+
+# Visual test simulation
+python3 test_lights.py
+```
+
+## Sunrise/Sunset Color Validation
+
+The system uses weather-aware circadian lighting with proper color temperature transitions:
+
+### Expected Behavior by Time of Day:
+- **Early Morning (6-8 AM)**: Warm red dominance, low white, minimal blue
+- **Midday (10-14 PM)**: High white, no red, moderate blue for cool light
+- **Evening (17-19 PM)**: Warm red returns, white decreases, blue minimal
+- **Night (20-6 AM)**: All channels off for proper darkness
+
+### Weather Impact Validation:
+- **Sunny**: Full brightness according to sun elevation
+- **Cloudy**: White reduced by ~20%, red reduced by 50%
+- **Rainy**: White reduced by ~50%, blue boosted by 40%
+- **Lightning/Thunderstorm**: Special lightning effects override normal lighting
+
+### Testing Color Channels:
+Run the comprehensive test to validate color behavior:
+```bash
+python3 test_weather_conditions.py
+```
+
+This validates:
+- ✅ Red channel dominates during sunrise/sunset (low sun elevation)
+- ✅ Blue channel strongest during midday (high sun elevation)  
+- ✅ White channel maintains minimum brightness during day hours
+- ✅ Weather conditions appropriately modify base lighting
+- ✅ Color temperature transitions are smooth and natural
+
 ## Getting Help
 
 If issues persist:

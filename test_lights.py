@@ -23,7 +23,7 @@ def test_color_channel(color_name, color_code):
     # Ramp up from 0 to 10
     for level in range(1, 11):
         print_progress_bar(level, 10, color_code, "up")
-        time.sleep(0.8)  # Simulate the delay from the YAML script
+        time.sleep(0.5)  # Match the 500ms delay from the YAML script
     
     print(f"\n   ✨ {color_name} at maximum brightness - pausing...")
     time.sleep(2)
@@ -31,7 +31,7 @@ def test_color_channel(color_name, color_code):
     # Ramp down from 10 to 0
     for level in range(9, -1, -1):
         print_progress_bar(level, 10, color_code, "down")
-        time.sleep(0.8)
+        time.sleep(0.5)  # Match the 500ms delay from the YAML script
     
     print(f"\n   ✅ {color_name} channel test complete")
     time.sleep(1)
