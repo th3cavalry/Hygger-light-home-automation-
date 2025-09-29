@@ -20,8 +20,6 @@ input_number:
     min: 0                           # Minimum value (off)
     max: 10                          # Maximum value (full brightness)
     step: 1                          # Increment step size
-    mode: slider                     # Display as slider in UI
-    icon: mdi:lightbulb-outline      # White lightbulb icon
     unit_of_measurement: "level"     # Unit display
     
   # Red Channel Level Controller  
@@ -32,8 +30,6 @@ input_number:
     min: 0                           # Minimum value (off)
     max: 10                          # Maximum value (full brightness)
     step: 1                          # Increment step size
-    mode: slider                     # Display as slider in UI
-    icon: mdi:lightbulb-outline      # Red lightbulb icon
     unit_of_measurement: "level"     # Unit display
     
   # Green Channel Level Controller
@@ -44,8 +40,6 @@ input_number:
     min: 0                           # Minimum value (off)
     max: 10                          # Maximum value (full brightness)
     step: 1                          # Increment step size
-    mode: slider                     # Display as slider in UI
-    icon: mdi:lightbulb-outline      # Green lightbulb icon
     unit_of_measurement: "level"     # Unit display
     
   # Blue Channel Level Controller
@@ -56,8 +50,6 @@ input_number:
     min: 0                           # Minimum value (off)
     max: 10                          # Maximum value (full brightness)
     step: 1                          # Increment step size
-    mode: slider                     # Display as slider in UI
-    icon: mdi:lightbulb-outline      # Blue lightbulb icon
     unit_of_measurement: "level"     # Unit display
 
 # Notes for Advanced Configuration:
