@@ -165,6 +165,14 @@ The system includes a comprehensive test script that cycles through each color c
 - Useful for understanding the test pattern without hardware
 - No Home Assistant required
 
+### Diagnostic Tools
+
+**Lighting Diagnostic Tool**: `python3 diagnose_lighting.py`
+- Diagnoses why lights might not be turning on at expected times
+- Shows expected light levels for current time
+- Checks common configuration issues
+- Provides step-by-step troubleshooting guidance
+
 ### Configuration Validation
 
 Run the included validation script to check your configuration:
