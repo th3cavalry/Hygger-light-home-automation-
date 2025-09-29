@@ -45,6 +45,32 @@ If lights reset to zero but don't adjust to proper brightness/color afterward:
    - Search for and call `Script: Turn on` with entity `script.sync_aquarium_lights`
    - Check Home Assistant logs for any errors
 
+### Problem 3: Lights Turn Off Each Other During Sync (Fixed in v2.1)
+
+If you observe this sequence during sync: White comes on → turns off → Red comes on → turns off → Green comes on → turns off → Blue stays on:
+
+**Root Cause**: The old reset script sent simultaneous IR commands for all channels, causing interference between channels on the Hygger HG016 hardware.
+
+**Fix Applied**: The reset script now sends individual commands sequentially:
+- Each channel gets its own dedicated IR command with 500ms delay
+- Sequential processing: white → red → green → blue
+- No more interference between channels
+- Total reset time: ~24 seconds (longer but more reliable)
+
+**If you still see this issue**:
+1. **Ensure you have the latest script version**:
+   - Check that `scripts/aquarium_reset_to_zero.yaml` uses individual commands, not command arrays
+   - Each command should have its own `service: remote.send_command` block
+
+2. **Verify IR command timing**:
+   - All delays should be 500ms (not 200ms)
+   - Each channel should be processed individually
+
+3. **Test with the diagnostic script**:
+   ```bash
+   python3 test_reset_behavior.py  # If available in your version
+   ```
+
 ### Debug Process
 1. **Check Helper Entities**: Ensure all helper entities exist:
    - `input_number.hygger_white_level`

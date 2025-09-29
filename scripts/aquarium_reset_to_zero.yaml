@@ -9,25 +9,50 @@ icon: "mdi:restore"
 mode: single
 
 sequence:
-  # Send multiple down commands to ensure complete reset
+  # Send individual down commands for each channel to prevent interference
   # Using 12 repetitions to guarantee zero state even if starting at max (10)
   - repeat:
       count: 12
       sequence:
-        # Send all down commands simultaneously for efficiency
+        # Send white channel down command
         - service: remote.send_command
           target:
             entity_id: remote.rm4_pro_remote  # UPDATE: Change to your actual Broadlink entity ID
           data:
             device: hygger_hg016
-            command:
-              - white_down
-              - red_down
-              - green_down
-              - blue_down
-        # Short delay between command batches to prevent IR interference
+            command: white_down
         - delay:
-            milliseconds: 200
+            milliseconds: 500
+        
+        # Send red channel down command
+        - service: remote.send_command
+          target:
+            entity_id: remote.rm4_pro_remote  # UPDATE: Change to your actual Broadlink entity ID
+          data:
+            device: hygger_hg016
+            command: red_down
+        - delay:
+            milliseconds: 500
+        
+        # Send green channel down command
+        - service: remote.send_command
+          target:
+            entity_id: remote.rm4_pro_remote  # UPDATE: Change to your actual Broadlink entity ID
+          data:
+            device: hygger_hg016
+            command: green_down
+        - delay:
+            milliseconds: 500
+        
+        # Send blue channel down command
+        - service: remote.send_command
+          target:
+            entity_id: remote.rm4_pro_remote  # UPDATE: Change to your actual Broadlink entity ID
+          data:
+            device: hygger_hg016
+            command: blue_down
+        - delay:
+            milliseconds: 500
 
   # Update all helper entities to reflect zero state
   - service: input_number.set_value
